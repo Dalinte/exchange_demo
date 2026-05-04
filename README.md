@@ -43,8 +43,6 @@ demo-exchange/
 ## Быстрый старт
 
 ```bash
-git clone <repo>
-cd demo-exchange
 npm run setup
 npm run dev
 ```
