@@ -2,9 +2,13 @@
 
 Pet-проект: криптовалютная биржа с demo trading (без регистрации).
 
+## Требования
+
+- [Node.js 22+](https://nodejs.org/)
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) (для PostgreSQL через Docker Compose)
+
 ## Стек технологий
 
-- Node.js 22+
 - npm workspaces (монорепозиторий)
 - TypeScript
 - NestJS
