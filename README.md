@@ -1,28 +1,28 @@
 # Demo Exchange
 
-A pet project: cryptocurrency exchange with paper trading, no registration.
+Pet-проект: криптовалютная биржа с demo trading (без регистрации).
 
-## Tech stack
+## Стек технологий
 
-- Node.js 20+
-- npm workspaces (monorepo)
+- Node.js 22+
+- npm workspaces (монорепозиторий)
 - TypeScript
-- NestJS (API — added by the user via `nest new`)
-- Next.js (web — added by the user via `create-next-app`)
+- NestJS
+- Next.js
 - Prisma
 - PostgreSQL 18
-- Zod (shared schemas / runtime validation)
+- Zod (общие схемы / валидация в рантайме)
 - Docker Compose
 
-## Project structure
+## Структура проекта
 
 ```
 demo-exchange/
 ├── apps/
-│   ├── api/                          # NestJS app (scaffolded by the user)
-│   └── web/                          # Next.js app (scaffolded by the user)
+│   ├── api/                          # Приложение NestJS
+│   └── web/                          # Приложение Next.js
 ├── packages/
-│   └── shared/                       # @exchange/shared — Zod schemas + types
+│   └── shared/                       # @exchange/shared — Zod-схемы + типы
 │       ├── src/
 │       │   ├── index.ts
 │       │   └── schemas/
@@ -40,33 +40,59 @@ demo-exchange/
 └── README.md
 ```
 
-## Quick start
+## Быстрый старт
 
 ```bash
 git clone <repo>
 cd demo-exchange
 npm run setup
+npm run dev
 ```
 
-After setup completes:
+После `npm run dev` будут запущены API и Web одновременно.
 
-1. Create the API: `cd apps && nest new api`
-2. Create the Web: `cd apps && npx create-next-app@latest web`
-3. Add `"apps/*"` to `"workspaces"` in `package.json`
-4. Run `npm install` at the root again
-5. Configure each app to import from `@exchange/shared`
+## Доступные команды
 
-## Available scripts
+### Инициализация
 
-| Script                 | Description                                        |
-| ---------------------- | -------------------------------------------------- |
-| `npm run setup`        | One-shot bootstrap: copy `.env`, install, start db |
-| `npm run db:up`        | Start PostgreSQL (Docker Compose, detached)        |
-| `npm run db:down`      | Stop and remove the PostgreSQL container           |
-| `npm run db:logs`      | Tail PostgreSQL logs                               |
-| `npm run format`       | Prettier-format the entire repo                    |
-| `npm run format:check` | Check formatting without writing changes           |
+| Команда           | Описание                                                                |
+| ----------------- | ----------------------------------------------------------------------- |
+| `npm run setup`   | Bootstrap в один шаг: копирование `.env`, установка зависимостей, БД    |
 
-## Status
+### Разработка
 
-Skeleton phase: monorepo wrapper ready, applications not yet scaffolded.
+| Команда             | Описание                                                  |
+| ------------------- | --------------------------------------------------------- |
+| `npm run dev`       | Запуск API и Web одновременно (через `concurrently`)      |
+| `npm run dev:api`   | Запуск только API в режиме разработки                     |
+| `npm run dev:web`   | Запуск только Web в режиме разработки                     |
+
+### Сборка и запуск
+
+| Команда               | Описание                                                |
+| --------------------- | ------------------------------------------------------- |
+| `npm run build`       | Сборка всех workspaces (если у них есть скрипт `build`) |
+| `npm run build:api`   | Сборка только API                                       |
+| `npm run build:web`   | Сборка только Web                                       |
+| `npm run start:api`   | Запуск собранного API                                   |
+| `npm run start:web`   | Запуск собранного Web                                   |
+
+### Качество кода
+
+| Команда                | Описание                                                |
+| ---------------------- | ------------------------------------------------------- |
+| `npm run lint`         | Линт по всем workspaces                                 |
+| `npm run test`         | Тесты по всем workspaces                                |
+| `npm run format`       | Форматирование всего репозитория через Prettier         |
+| `npm run format:check` | Проверка форматирования без внесения изменений          |
+
+### База данных
+
+| Команда                | Описание                                                |
+| ---------------------- | ------------------------------------------------------- |
+| `npm run db:up`        | Запуск PostgreSQL (Docker Compose, в фоне)              |
+| `npm run db:down`      | Остановка и удаление контейнера PostgreSQL              |
+| `npm run db:logs`      | Просмотр логов PostgreSQL                               |
+| `npm run db:migrate`   | Применение Prisma-миграций (через workspace `api`)      |
+| `npm run db:studio`    | Запуск Prisma Studio (через workspace `api`)            |
+

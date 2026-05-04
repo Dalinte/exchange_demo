@@ -3,20 +3,36 @@
   "version": "0.0.0",
   "private": true,
   "description": "Cryptocurrency exchange with paper trading, no registration.",
-  "workspaces": ["apps/*", "packages/*"],
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "engines": {
     "node": ">=22"
   },
   "scripts": {
     "setup": "node scripts/setup.mjs",
+    "dev": "concurrently --names \"api,web\" --prefix-colors \"cyan,magenta\" \"npm run dev:api\" \"npm run dev:web\"",
+    "dev:api": "npm run start:dev --workspace=api",
+    "dev:web": "npm run dev --workspace=web",
+    "build": "npm run build --workspaces --if-present",
+    "build:api": "npm run build --workspace=api",
+    "build:web": "npm run build --workspace=web",
+    "start:api": "npm run start --workspace=api",
+    "start:web": "npm run start --workspace=web",
+    "lint": "npm run lint --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
     "db:up": "docker compose up -d",
     "db:down": "docker compose down",
     "db:logs": "docker compose logs -f postgres",
+    "db:migrate": "npm run prisma:migrate --workspace=api",
+    "db:studio": "npm run prisma:studio --workspace=api",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
   },
   "devDependencies": {
     "@types/node": "^25.6.0",
+    "concurrently": "^9.2.1",
     "prettier": "^3.8.3",
     "typescript": "^6.0.3"
   }
