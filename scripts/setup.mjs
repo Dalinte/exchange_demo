@@ -93,6 +93,12 @@ async function main() {
   console.log('\nWaiting for PostgreSQL to become healthy...');
   await waitForPostgres(postgresUser);
 
+  console.log('\nApplying Prisma schema...');
+  run('npm', ['run', 'db:push']);
+
+  console.log('\nGenerating Prisma client...');
+  run('npm', ['run', 'db:generate']);
+
   console.log(`✓ Setup complete.`);
 }
 

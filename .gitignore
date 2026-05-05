@@ -24,6 +24,7 @@ coverage/
 
 # Prisma local artifacts
 **/prisma/migrations/dev.db*
+apps/api/generated/
 
 # IDE
 .idea

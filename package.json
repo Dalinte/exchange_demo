@@ -26,6 +26,7 @@
     "db:down": "docker compose down",
     "db:logs": "docker compose logs -f postgres",
     "db:push": "npm run prisma:push --workspace=api",
+    "db:generate": "npm run prisma:generate --workspace=api",
     "db:studio": "npm run prisma:studio --workspace=api",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
