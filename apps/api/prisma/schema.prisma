@@ -1,0 +1,228 @@
+// =====================================================================
+// Demo Exchange — Prisma Schema
+// =====================================================================
+// Назначение: схема БД для MVP демо-биржи криптовалют.
+// Заложено расширение: фьючерсы (через Account.type), лимитные ордера
+// (через Order.type/status/price), частичное исполнение (filledQuantity).
+//
+// Все денежные значения — Decimal(36, 18) для безопасности при работе
+// с любыми крипто-активами (включая токены с 18 десятичными).
+// =====================================================================
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+  moduleFormat    = "cjs"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// =====================================================================
+// ENUMS
+// =====================================================================
+
+enum AccountType {
+  SPOT
+  // FUTURES — будет добавлен позже
+}
+
+enum OrderSide {
+  BUY
+  SELL
+}
+
+enum OrderType {
+  MARKET
+  LIMIT
+  // STOP_LOSS, TAKE_PROFIT — потенциальное расширение
+}
+
+enum OrderStatus {
+  PENDING            // создан, ждёт исполнения (актуально для LIMIT)
+  PARTIALLY_FILLED   // исполнен частично (для LIMIT с частичным fill)
+  FILLED             // исполнен полностью
+  CANCELED           // отменён пользователем
+  REJECTED           // отклонён системой (недостаточно средств, etc.)
+}
+
+// =====================================================================
+// USER
+// =====================================================================
+// Анонимный пользователь, идентифицируется по UUID в httpOnly cookie.
+// При добавлении регистрации сюда придут email, passwordHash и т.п.
+// =====================================================================
+
+model User {
+  id        String   @id @default(uuid()) @db.Uuid
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  accounts Account[]
+
+  @@map("users")
+}
+
+// =====================================================================
+// ACCOUNT
+// =====================================================================
+// Счёт пользователя. В MVP — только SPOT, один на пользователя.
+// При добавлении фьючерсов появится второй счёт того же пользователя
+// с type = FUTURES.
+// =====================================================================
+
+model Account {
+  id        String      @id @default(uuid()) @db.Uuid
+  userId    String      @db.Uuid
+  type      AccountType @default(SPOT)
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  balances Balance[]
+  orders   Order[]
+  trades   Trade[]
+
+  @@unique([userId, type]) // один счёт каждого типа на пользователя
+  @@map("accounts")
+}
+
+// =====================================================================
+// BALANCE
+// =====================================================================
+// Баланс конкретного актива на счёте. Разделён на free (доступно)
+// и locked (заблокировано в открытых ордерах).
+//
+// Даже в MVP, где локов пока нет, поле locked присутствует —
+// добавление лимитников в будущем не потребует миграции.
+//
+// При создании счёта создаётся одна запись: USDT с free = 10000.
+// Балансы других активов создаются при первой покупке.
+// =====================================================================
+
+model Balance {
+  id        String   @id @default(uuid()) @db.Uuid
+  accountId String   @db.Uuid
+  asset     String   // "USDT", "BTC", "ETH", ...
+  free      Decimal  @default(0) @db.Decimal(36, 18)
+  locked    Decimal  @default(0) @db.Decimal(36, 18)
+  updatedAt DateTime @updatedAt
+
+  account Account @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@unique([accountId, asset])
+  @@map("balances")
+}
+
+// =====================================================================
+// TRADING PAIR
+// =====================================================================
+// Метаданные торговой пары: точность цены и количества, минимальный
+// размер ордера. Заполняется через seed-скрипт.
+//
+// pricePrecision и quantityPrecision используются для валидации
+// и форматирования. Пример для BTC/USDT: pricePrecision=2 (50000.00),
+// quantityPrecision=5 (0.00012).
+// =====================================================================
+
+model TradingPair {
+  id                String   @id @default(uuid()) @db.Uuid
+  symbol            String   @unique // "BTCUSDT"
+  baseAsset         String   // "BTC"
+  quoteAsset        String   // "USDT"
+  pricePrecision    Int      // знаков после запятой в цене
+  quantityPrecision Int      // знаков после запятой в количестве
+  minQuantity       Decimal  @db.Decimal(36, 18)
+  isActive          Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  orders Order[]
+  trades Trade[]
+
+  @@map("trading_pairs")
+}
+
+// =====================================================================
+// ORDER
+// =====================================================================
+// Ордер пользователя. Все поля для будущих лимитников и частичного
+// исполнения уже присутствуют.
+//
+// Workflow для MARKET (MVP):
+//   1. Создаётся со status = PENDING
+//   2. В той же транзакции исполняется по текущей цене Binance
+//   3. Создаётся Trade, обновляются балансы
+//   4. Order переходит в FILLED, заполняются filledQuantity, averageFillPrice, filledAt
+//
+// Workflow для LIMIT (будущее):
+//   1. Создаётся со status = PENDING
+//   2. Средства переводятся из Balance.free в Balance.locked
+//   3. Фоновая задача проверяет цены, при достижении — исполняет
+//   4. Может быть FILLED полностью или PARTIALLY_FILLED, может быть CANCELED
+// =====================================================================
+
+model Order {
+  id               String      @id @default(uuid()) @db.Uuid
+  accountId        String      @db.Uuid
+  tradingPairId    String      @db.Uuid
+  clientOrderId    String?     // идемпотентный ключ от клиента — защита от двойного submit/ретрая
+  side             OrderSide
+  type             OrderType
+  status           OrderStatus @default(PENDING)
+  quantity         Decimal     @db.Decimal(36, 18) // желаемое количество в base asset
+  filledQuantity   Decimal     @default(0) @db.Decimal(36, 18) // сколько уже исполнено
+  price            Decimal?    @db.Decimal(36, 18) // null для MARKET, цена для LIMIT
+  averageFillPrice Decimal?    @db.Decimal(36, 18) // средняя цена исполнения
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+  filledAt         DateTime?   // когда полностью исполнен
+
+  account     Account     @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  tradingPair TradingPair @relation(fields: [tradingPairId], references: [id])
+  trades      Trade[]
+
+  @@unique([accountId, clientOrderId])   // идемпотентность в рамках аккаунта
+  @@index([accountId, status])           // "мои открытые ордера"
+  @@index([tradingPairId, status])       // фоновая проверка лимитников по паре
+  @@index([accountId, createdAt(sort: Desc)]) // история ордеров пользователя
+  @@map("orders")
+}
+
+// =====================================================================
+// TRADE
+// =====================================================================
+// Запись об исполнении (всего или части ордера).
+//
+// Денормализация: accountId, tradingPairId и side скопированы из Order
+// для скорости запросов "история сделок пользователя по паре" без JOIN.
+//
+// Один Order может породить несколько Trade при частичном исполнении
+// (актуально для LIMIT). Для MARKET в MVP — всегда один Trade на Order.
+//
+// Поля fee и feeAsset заложены на будущее, в MVP всегда 0/USDT.
+// =====================================================================
+
+model Trade {
+  id            String    @id @default(uuid()) @db.Uuid
+  orderId       String    @db.Uuid
+  accountId     String    @db.Uuid // денормализация для быстрого запроса истории
+  tradingPairId String    @db.Uuid // денормализация для фильтрации по паре
+  side          OrderSide // денормализация из Order
+  quantity      Decimal   @db.Decimal(36, 18) // сколько исполнено в этом трейде
+  price         Decimal   @db.Decimal(36, 18) // цена исполнения
+  quoteAmount   Decimal   @db.Decimal(36, 18) // quantity * price, в quote asset
+  fee           Decimal   @default(0) @db.Decimal(36, 18)
+  feeAsset      String    @default("USDT")
+  createdAt     DateTime  @default(now())
+
+  order       Order       @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  account     Account     @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  tradingPair TradingPair @relation(fields: [tradingPairId], references: [id])
+
+  @@index([orderId])                                    // выборка трейдов по ордеру (PG не делает автоиндекс на FK)
+  @@index([accountId, createdAt(sort: Desc)])           // история сделок пользователя
+  @@index([accountId, tradingPairId, createdAt(sort: Desc)]) // история по конкретной паре
+  @@map("trades")
+}
