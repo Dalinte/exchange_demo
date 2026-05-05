@@ -105,4 +105,5 @@ npm run dev
 | `npm run db:down`   | Остановка и удаление контейнера PostgreSQL        |
 | `npm run db:logs`   | Просмотр логов PostgreSQL                         |
 | `npm run db:push`   | Синхронизация Prisma-схемы с БД (workspace `api`) |
+| `npm run db:seed`   | Заполнение торговых пар (idempotent upsert)       |
 | `npm run db:studio` | Запуск Prisma Studio (workspace `api`)            |

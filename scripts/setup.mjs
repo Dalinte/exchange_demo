@@ -99,6 +99,9 @@ async function main() {
   console.log('\nGenerating Prisma client...');
   run('npm', ['run', 'db:generate']);
 
+  console.log('\nSeeding trading pairs...');
+  run('npm', ['run', 'db:seed']);
+
   console.log(`✓ Setup complete.`);
 }
 
