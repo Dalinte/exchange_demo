@@ -32,6 +32,7 @@
     "@prisma/adapter-pg": "^7.8.0",
     "@prisma/client": "^7.8.0",
     "cookie-parser": "^1.4.7",
+    "decimal.js": "^10.4.3",
     "nestjs-zod": "^5.3.0",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1"
@@ -72,7 +73,21 @@
     "rootDir": "src",
     "testRegex": ".*\\.spec\\.ts$",
     "transform": {
-      "^.+\\.(t|j)s$": "ts-jest"
+      "^.+\\.(t|j)s$": [
+        "ts-jest",
+        {
+          "tsconfig": {
+            "module": "commonjs",
+            "moduleResolution": "node",
+            "resolvePackageJsonExports": false,
+            "verbatimModuleSyntax": false
+          }
+        }
+      ]
+    },
+    "moduleNameMapper": {
+      "^@exchange/shared$": "<rootDir>/../../../packages/shared/src/index.ts",
+      "^(\\.{1,2}/.*)\\.js$": "$1"
     },
     "collectCoverageFrom": [
       "**/*.(t|j)s"

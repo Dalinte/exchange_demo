@@ -1,13 +1,23 @@
-import { Controller, Get, Query } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  NotImplementedException,
+  Post,
+  Query,
+} from '@nestjs/common';
 import {
   ApiCookieAuth,
+  ApiCreatedResponse,
   ApiOkResponse,
   ApiOperation,
   ApiTags,
 } from '@nestjs/swagger';
 import { CurrentUser } from '../auth/current-user.decorator';
 import type { CurrentUserType } from '../auth/current-user.decorator';
+import { CreateOrderDto } from './dto/create-order.dto';
 import { GetOrdersQueryDto } from './dto/get-orders-query.dto';
+import { OrderDto } from './dto/order.dto';
 import { OrderListDto } from './dto/order-list.dto';
 import { OrdersService } from './orders.service';
 
@@ -30,5 +40,25 @@ export class OrdersController {
     @Query() query: GetOrdersQueryDto,
   ): Promise<OrderListDto> {
     return this.orders.findForAccount(user.account.id, query);
+  }
+
+  @Post()
+  @ApiOperation({
+    summary: 'Place an order',
+    description:
+      'Размещение ордера. В MVP поддерживается только `type=MARKET` — ' +
+      'исполняется сразу по текущей цене Binance, баланс и сделка ' +
+      'обновляются в одной транзакции. Для `type=LIMIT` возвращается ' +
+      '501 Not Implemented.',
+  })
+  @ApiCreatedResponse({ type: OrderDto })
+  async create(
+    @CurrentUser() user: CurrentUserType,
+    @Body() dto: CreateOrderDto,
+  ): Promise<OrderDto> {
+    if (dto.type === 'LIMIT') {
+      throw new NotImplementedException('LIMIT orders are not supported yet');
+    }
+    return this.orders.placeMarketOrder(user.account.id, dto);
   }
 }

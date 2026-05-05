@@ -49,6 +49,7 @@ demo-exchange/
 
 - [Анонимная идентификация](docs/auth.md) — cookie-based identity, $10000 USDT для каждого посетителя без регистрации.
 - [Схемы, валидация и OpenAPI](docs/api-schema.md) — Zod в `@exchange/shared` как источник правды; автоматическая валидация (`nestjs-zod`) и Swagger UI на `/api/docs`.
+- [Размещение ордеров](docs/orders.md) — `POST /api/orders` для MARKET-ордеров, цена с Binance, атомарное списание/зачисление в одной транзакции.
 
 ## Быстрый старт
 

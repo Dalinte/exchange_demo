@@ -32,4 +32,8 @@ export default tseslint.config(
       'prettier/prettier': ['error', { endOfLine: 'auto' }],
     },
   },
+  {
+    files: ['**/*.spec.ts'],
+    ...tseslint.configs.disableTypeChecked,
+  },
 );

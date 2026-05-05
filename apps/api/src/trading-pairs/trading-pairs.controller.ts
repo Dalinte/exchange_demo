@@ -11,7 +11,8 @@ export class TradingPairsController {
   @Get()
   @ApiOperation({
     summary: 'List active trading pairs',
-    description: 'Возвращает все активные торговые пары, упорядоченные по symbol.',
+    description:
+      'Возвращает все активные торговые пары, упорядоченные по symbol.',
   })
   @ApiOkResponse({ type: TradingPairListDto })
   async list(): Promise<TradingPairListDto> {

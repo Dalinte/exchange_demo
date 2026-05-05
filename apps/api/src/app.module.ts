@@ -25,9 +25,6 @@ import { TradingPairsModule } from './trading-pairs/trading-pairs.module';
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer): void {
-    consumer
-      .apply(AnonymousUserMiddleware)
-      .exclude('health')
-      .forRoutes('*');
+    consumer.apply(AnonymousUserMiddleware).exclude('health').forRoutes('*');
   }
 }
