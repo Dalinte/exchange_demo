@@ -10,17 +10,11 @@
 
 ## Поток
 
-```mermaid
-flowchart TD
-    Schema["packages/shared/src/schemas/*<br/>Zod-схемы (источник правды)"]
-    Schema --> Type["z.infer&lt;typeof Schema&gt;<br/>TypeScript-типы"]
-    Schema --> DTO["apps/api/src/common/dto/*<br/>createZodDto Schema"]
-    DTO --> Pipe["ZodValidationPipe<br/>APP_PIPE provider"]
-    DTO --> Swagger["SwaggerModule.createDocument<br/>+ cleanupOpenApiDoc"]
-    Pipe --> Body["@Body dto: SomeDto<br/>runtime parse"]
-    Swagger --> UI["GET /api/docs<br/>Swagger UI"]
-    Swagger --> Json["GET /api/docs-json<br/>OpenAPI spec"]
-```
+1. Источник правды — Zod-схемы в `packages/shared/src/schemas/*`. Из них всё остальное выводится.
+2. **TypeScript-типы**: `z.infer<typeof Schema>` экспортируется из того же файла и шарится между api и web.
+3. **DTO-классы**: на стороне api рядом с фичей лежит файл `*.dto.ts` с `createZodDto(Schema)`. Класс несёт схему как static-поле и используется в сигнатуре контроллера.
+4. **Валидация входа**: глобальный `ZodValidationPipe` (зарегистрирован через `APP_PIPE` в `app.module.ts`) на каждом `@Body`/`@Query`/`@Param` находит у DTO статическую схему и парсит входные данные. Невалидные — `400` с детализацией.
+5. **OpenAPI**: `SwaggerModule.createDocument` + `cleanupOpenApiDoc` собирают спеку из тех же DTO и публикуют её на `GET /api/docs` (Swagger UI) и `GET /api/docs-json` (JSON).
 
 ## Структура
 

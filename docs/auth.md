@@ -4,23 +4,13 @@
 
 ## Поток
 
-```mermaid
-flowchart TD
-    Req[HTTP /api/*] --> CP[cookie-parser]
-    CP --> Skip{path == /api/health?}
-    Skip -- yes --> Ctrl[Controller]
-    Skip -- no --> MW[AnonymousUserMiddleware]
-    MW --> Has{cookie account_id?}
-    Has -- yes --> Find["prisma.user.findUnique<br/>include SPOT account"]
-    Has -- no --> Create
-    Find --> Exists{found?}
-    Exists -- yes --> Attach
-    Exists -- no --> Create["$transaction:<br/>user → account SPOT → balance USDT 10000"]
-    Create --> SetCookie[Set-Cookie account_id<br/>httpOnly, 365d]
-    SetCookie --> Attach[req.user = User and account]
-    Attach --> Ctrl
-    Ctrl --> Resp[Response]
-```
+1. Запрос приходит на `/api/*`. `cookie-parser` парсит cookies.
+2. Если путь `/api/health` — middleware пропускается, идём сразу в контроллер. Иначе — `AnonymousUserMiddleware`.
+3. Middleware смотрит, есть ли cookie `account_id`:
+   - **Cookie есть**: `prisma.user.findUnique` с включённым SPOT-`Account`. Если нашёл — переходим к шагу 5.
+   - **Cookie нет** или **юзер по cookie не нашёлся**: создаём в одной `$transaction` нового `User` → `Account(SPOT)` → `Balance(USDT, free=10000)`. Ставим `Set-Cookie account_id` (httpOnly, 365 дней).
+4. Прикрепляем результат к `req.user = User & { account }`.
+5. Контроллер обрабатывает запрос как обычно — `@CurrentUser()` уже вернёт нужного пользователя.
 
 ## Cookie
 
