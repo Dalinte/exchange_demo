@@ -12,7 +12,9 @@
   },
   "scripts": {
     "setup": "node scripts/setup.mjs",
-    "dev": "concurrently --names \"api,web\" --prefix-colors \"cyan,magenta\" \"npm run dev:api\" \"npm run dev:web\"",
+    "dev": "concurrently --names \"shared,api,web\" --prefix-colors \"yellow,cyan,magenta\" \"npm run dev:shared\" \"npm run dev:api\" \"npm run dev:web\"",
+    "dev:shared": "npm run build:watch --workspace=@exchange/shared",
+    "predev:api": "npm run build --workspace=@exchange/shared",
     "dev:api": "npm run start:dev --workspace=api",
     "dev:web": "npm run dev --workspace=web",
     "build": "npm run build --workspaces --if-present",
