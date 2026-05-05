@@ -7,7 +7,7 @@ import {
 } from '@nestjs/swagger';
 import { CurrentUser } from '../auth/current-user.decorator';
 import type { CurrentUserType } from '../auth/current-user.decorator';
-import { AccountSummaryDto } from '../common/dto/account-summary.dto';
+import { AccountSummaryDto } from './dto/account-summary.dto';
 import { AccountsService } from './accounts.service';
 
 @ApiTags('account')

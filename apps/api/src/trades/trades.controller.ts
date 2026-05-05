@@ -7,8 +7,8 @@ import {
 } from '@nestjs/swagger';
 import { CurrentUser } from '../auth/current-user.decorator';
 import type { CurrentUserType } from '../auth/current-user.decorator';
-import { GetTradesQueryDto } from '../common/dto/get-trades-query.dto';
-import { TradeListDto } from '../common/dto/trade-list.dto';
+import { GetTradesQueryDto } from './dto/get-trades-query.dto';
+import { TradeListDto } from './dto/trade-list.dto';
 import { TradesService } from './trades.service';
 
 @ApiTags('trades')

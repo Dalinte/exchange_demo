@@ -1,6 +1,6 @@
 import { Controller, Get } from '@nestjs/common';
 import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
-import { TradingPairListDto } from '../common/dto/trading-pair-list.dto';
+import { TradingPairListDto } from './dto/trading-pair-list.dto';
 import { TradingPairsService } from './trading-pairs.service';
 
 @ApiTags('trading-pairs')

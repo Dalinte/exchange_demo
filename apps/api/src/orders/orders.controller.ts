@@ -7,8 +7,8 @@ import {
 } from '@nestjs/swagger';
 import { CurrentUser } from '../auth/current-user.decorator';
 import type { CurrentUserType } from '../auth/current-user.decorator';
-import { GetOrdersQueryDto } from '../common/dto/get-orders-query.dto';
-import { OrderListDto } from '../common/dto/order-list.dto';
+import { GetOrdersQueryDto } from './dto/get-orders-query.dto';
+import { OrderListDto } from './dto/order-list.dto';
 import { OrdersService } from './orders.service';
 
 @ApiTags('orders')
