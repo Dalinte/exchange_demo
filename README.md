@@ -26,12 +26,11 @@ demo-exchange/
 │   ├── api/                          # Приложение NestJS
 │   └── web/                          # Приложение Next.js
 ├── packages/
-│   └── shared/                       # @exchange/shared — Zod-схемы + типы
+│   └── shared/                       # @exchange/shared — Zod-схемы + типы (источник правды для API)
 │       ├── src/
 │       │   ├── index.ts
-│       │   └── schemas/
-│       │       └── example.ts
-│       ├── package.json
+│       │   └── schemas/              # common, trading-pair, balance, order, trade, account, ws-messages
+│       ├── package.json              # main → ./dist/index.js, нужен build перед использованием
 │       └── tsconfig.json
 ├── scripts/
 │   └── setup.mjs
@@ -49,6 +48,7 @@ demo-exchange/
 Заметки по ключевым фичам — короткая ссылка на цели, поток и ограничения каждой:
 
 - [Анонимная идентификация](docs/auth.md) — cookie-based identity, $10000 USDT для каждого посетителя без регистрации.
+- [Схемы, валидация и OpenAPI](docs/api-schema.md) — Zod в `@exchange/shared` как источник правды; автоматическая валидация (`nestjs-zod`) и Swagger UI на `/api/docs`.
 
 ## Быстрый старт
 
@@ -71,9 +71,12 @@ npm run dev
 
 | Команда           | Описание                                             |
 | ----------------- | ---------------------------------------------------- |
-| `npm run dev`     | Запуск API и Web одновременно (через `concurrently`) |
-| `npm run dev:api` | Запуск только API в режиме разработки                |
-| `npm run dev:web` | Запуск только Web в режиме разработки                |
+| `npm run dev`        | Запуск shared (watch), API и Web одновременно (через `concurrently`) |
+| `npm run dev:shared` | Сборка `@exchange/shared` в watch-режиме                          |
+| `npm run dev:api`    | Запуск только API в режиме разработки (с авто-ребилдом shared)    |
+| `npm run dev:web`    | Запуск только Web в режиме разработки                              |
+
+> Swagger UI живёт на API и доступен на `http://localhost:3001/api/docs` после `npm run dev` или `npm run dev:api`.
 
 ### Сборка и запуск
 
