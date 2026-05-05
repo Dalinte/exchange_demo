@@ -90,10 +90,10 @@ npm run dev
 
 ### База данных
 
-| Команда              | Описание                                           |
-| -------------------- | -------------------------------------------------- |
-| `npm run db:up`      | Запуск PostgreSQL (Docker Compose, в фоне)         |
-| `npm run db:down`    | Остановка и удаление контейнера PostgreSQL         |
-| `npm run db:logs`    | Просмотр логов PostgreSQL                          |
-| `npm run db:migrate` | Применение Prisma-миграций (через workspace `api`) |
-| `npm run db:studio`  | Запуск Prisma Studio (через workspace `api`)       |
+| Команда             | Описание                                          |
+| ------------------- | ------------------------------------------------- |
+| `npm run db:up`     | Запуск PostgreSQL (Docker Compose, в фоне)        |
+| `npm run db:down`   | Остановка и удаление контейнера PostgreSQL        |
+| `npm run db:logs`   | Просмотр логов PostgreSQL                         |
+| `npm run db:push`   | Синхронизация Prisma-схемы с БД (workspace `api`) |
+| `npm run db:studio` | Запуск Prisma Studio (workspace `api`)            |
