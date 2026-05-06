@@ -6,4 +6,5 @@ export * from './schemas/trade.js';
 export * from './schemas/account.js';
 export * from './schemas/queries.js';
 export * from './schemas/ws-messages.js';
+export * from './schemas/ws-client.js';
 export * from './schemas/example.js';

@@ -1,4 +1,5 @@
 import { NestFactory } from '@nestjs/core';
+import { WsAdapter } from '@nestjs/platform-ws';
 import cookieParser from 'cookie-parser';
 import { AppModule } from './app.module';
 import { setupSwagger } from './swagger';
@@ -13,6 +14,7 @@ async function bootstrap() {
     origin: process.env.CORS_ORIGIN ?? 'http://localhost:3000',
     credentials: true,
   });
+  app.useWebSocketAdapter(new WsAdapter(app));
   app.enableShutdownHooks();
 
   setupSwagger(app);

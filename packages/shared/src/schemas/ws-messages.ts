@@ -38,15 +38,22 @@ export const BalanceUpdateSchema = z.object({
   data: BalanceSchema,
 });
 
+export const WSErrorMessageSchema = z.object({
+  type: z.literal('error'),
+  message: z.string(),
+});
+
 export const WSMessageSchema = z.discriminatedUnion('type', [
   KlineUpdateSchema,
   TickerUpdateSchema,
   OrderUpdateSchema,
   BalanceUpdateSchema,
+  WSErrorMessageSchema,
 ]);
 
 export type KlineUpdate = z.infer<typeof KlineUpdateSchema>;
 export type TickerUpdate = z.infer<typeof TickerUpdateSchema>;
 export type OrderUpdate = z.infer<typeof OrderUpdateSchema>;
 export type BalanceUpdate = z.infer<typeof BalanceUpdateSchema>;
+export type WSErrorMessage = z.infer<typeof WSErrorMessageSchema>;
 export type WSMessage = z.infer<typeof WSMessageSchema>;
