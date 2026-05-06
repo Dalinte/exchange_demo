@@ -52,6 +52,62 @@ demo-exchange/
 - [Размещение ордеров](docs/orders.md) — `POST /api/orders` для MARKET-ордеров, цена с Binance, атомарное списание/зачисление в одной транзакции.
 - [Realtime market data](docs/realtime.md) — `ws://localhost:3001/ws` стрим свечей и тикеров: один upstream к Binance combined-streams с фанаутом на N клиентов.
 
+## API Documentation
+
+Интерактивная документация — Swagger UI:
+[http://localhost:3001/api/docs](http://localhost:3001/api/docs).
+
+Сгенерирована из Zod-схем `@exchange/shared` через [`nestjs-zod`](https://www.npmjs.com/package/nestjs-zod):
+DTO и `OpenAPI` остаются в синхроне с runtime-валидацией. Сырой OpenAPI JSON — на `/api/docs-json`.
+
+## Environment Variables
+
+`.env.example` — источник правды по нужным переменным. Все API-переменные валидируются Zod-схемой при старте: если что-то невалидно — сервер не стартует, в логах виден понятный список проблем.
+
+| Переменная             | Где                | Описание                                                                            |
+| ---------------------- | ------------------ | ----------------------------------------------------------------------------------- |
+| `DATABASE_URL`         | api, prisma        | Строка подключения к PostgreSQL (`postgresql://user:pass@host:port/db`).            |
+| `API_PORT`             | api                | Порт HTTP-сервера API. По умолчанию `3001`.                                         |
+| `CORS_ORIGIN`          | api, exchange WS   | Origin фронта для CORS и WS (`http://localhost:3000` локально).                     |
+| `NODE_ENV`             | api                | `development` \| `production` \| `test`. По умолчанию `development`.                |
+| `POSTGRES_USER`        | docker compose     | Имя пользователя PostgreSQL контейнера.                                             |
+| `POSTGRES_PASSWORD`    | docker compose     | Пароль пользователя PostgreSQL.                                                     |
+| `POSTGRES_DB`          | docker compose     | Имя БД, создаваемой контейнером.                                                    |
+| `POSTGRES_PORT`        | docker compose     | Порт, на котором PostgreSQL слушает на хосте.                                       |
+| `NEXT_PUBLIC_API_URL`  | web                | URL REST API, видимый из браузера.                                                  |
+| `NEXT_PUBLIC_WS_URL`   | web                | URL WebSocket-шлюза, видимый из браузера.                                           |
+
+## Health Check
+
+`GET /api/health` — проверка живости и готовности сервиса.
+
+Ответ:
+
+```jsonc
+{
+  "status": "ok",                  // "ok" | "degraded"
+  "timestamp": 1736120000000,
+  "checks": {
+    "db": "connected",             // "connected" | "disconnected"
+    "binance": "connected"         // "connected" | "disconnected"
+  }
+}
+```
+
+`db` проверяется через `SELECT 1`, `binance` — через состояние upstream WebSocket к Binance combined-streams. Если хоть одна проверка `disconnected`, общий `status` — `degraded` и HTTP-код **503**, иначе **200**.
+
+## Rate Limits
+
+Глобально на каждый IP — **100 запросов в минуту**. На отдельных эндпоинтах действуют более строгие пер-роутовые лимиты:
+
+| Эндпоинт                  | Лимит           |
+| ------------------------- | --------------- |
+| `POST /api/orders`        | 30 в минуту     |
+| `POST /api/account/reset` | 5 в минуту      |
+| Все остальные             | 100 в минуту    |
+
+При превышении сервер отвечает **429 Too Many Requests** (стандартное сообщение `@nestjs/throttler`).
+
 ## Быстрый старт
 
 ```bash

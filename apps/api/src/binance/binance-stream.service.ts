@@ -88,6 +88,10 @@ export class BinanceStreamService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
+  get isConnected(): boolean {
+    return this.isOpen();
+  }
+
   private isOpen(): boolean {
     return this.ws !== null && this.ws.readyState === WebSocket.OPEN;
   }

@@ -1,4 +1,8 @@
-import { Logger, type OnModuleInit } from '@nestjs/common';
+import {
+  Logger,
+  type OnModuleDestroy,
+  type OnModuleInit,
+} from '@nestjs/common';
 import {
   type OnGatewayConnection,
   type OnGatewayDisconnect,
@@ -59,7 +63,8 @@ export class ExchangeGateway
     OnGatewayInit,
     OnGatewayConnection,
     OnGatewayDisconnect,
-    OnModuleInit
+    OnModuleInit,
+    OnModuleDestroy
 {
   private readonly logger = new Logger(ExchangeGateway.name);
   private readonly clients = new Map<WebSocket, ClientState>();
@@ -85,6 +90,23 @@ export class ExchangeGateway
 
   afterInit(): void {
     this.heartbeatTimer = setInterval(() => this.runHeartbeat(), HEARTBEAT_MS);
+  }
+
+  onModuleDestroy(): void {
+    this.logger.log('Closing WebSocket clients (server shutdown)');
+    if (this.heartbeatTimer) {
+      clearInterval(this.heartbeatTimer);
+      this.heartbeatTimer = null;
+    }
+    for (const client of this.clients.keys()) {
+      try {
+        client.close(1001, 'Server shutting down');
+      } catch (err) {
+        this.logger.warn(`Error closing client: ${(err as Error).message}`);
+      }
+    }
+    this.clients.clear();
+    this.ipConnections.clear();
   }
 
   handleConnection(client: WebSocket, request: IncomingMessage): void {

@@ -2,15 +2,15 @@ import { Injectable, NestMiddleware } from '@nestjs/common';
 import type { NextFunction, Request, Response } from 'express';
 import {
   AccountType,
-  Prisma,
   type Account,
   type User,
 } from '../../generated/prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
-
-const COOKIE_NAME = 'account_id';
-const COOKIE_MAX_AGE_MS = 365 * 24 * 60 * 60 * 1000;
-const STARTING_USDT = new Prisma.Decimal(10000);
+import {
+  ACCOUNT_COOKIE_NAME,
+  STARTING_USDT,
+  accountCookieOptions,
+} from './cookie';
 
 type UserWithAccount = User & { account: Account };
 
@@ -27,12 +27,7 @@ export class AnonymousUserMiddleware implements NestMiddleware {
 
     if (!user) {
       user = await this.createAnonymousUser();
-      res.cookie(COOKIE_NAME, user.id, {
-        httpOnly: true,
-        sameSite: 'lax',
-        secure: process.env.NODE_ENV === 'production',
-        maxAge: COOKIE_MAX_AGE_MS,
-      });
+      res.cookie(ACCOUNT_COOKIE_NAME, user.id, accountCookieOptions());
     }
 
     req.user = user;
@@ -40,7 +35,7 @@ export class AnonymousUserMiddleware implements NestMiddleware {
   }
 
   private readUserIdCookie(req: Request): string | undefined {
-    const raw: unknown = req.cookies?.[COOKIE_NAME];
+    const raw: unknown = req.cookies?.[ACCOUNT_COOKIE_NAME];
     return typeof raw === 'string' ? raw : undefined;
   }
 

@@ -13,6 +13,7 @@ import {
   ApiOperation,
   ApiTags,
 } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 import { CurrentUser } from '../auth/current-user.decorator';
 import type { CurrentUserType } from '../auth/current-user.decorator';
 import { CreateOrderDto } from './dto/create-order.dto';
@@ -43,6 +44,7 @@ export class OrdersController {
   }
 
   @Post()
+  @Throttle({ default: { limit: 30, ttl: 60_000 } })
   @ApiOperation({
     summary: 'Place an order',
     description:

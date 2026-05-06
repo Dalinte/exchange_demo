@@ -1,10 +1,13 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, HttpCode, Post, Res } from '@nestjs/common';
 import {
   ApiCookieAuth,
   ApiOkResponse,
   ApiOperation,
   ApiTags,
 } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
+import type { Response } from 'express';
+import { ACCOUNT_COOKIE_NAME, accountCookieOptions } from '../auth/cookie';
 import { CurrentUser } from '../auth/current-user.decorator';
 import type { CurrentUserType } from '../auth/current-user.decorator';
 import { AccountSummaryDto } from './dto/account-summary.dto';
@@ -27,5 +30,24 @@ export class AccountsController {
   @ApiOkResponse({ type: AccountSummaryDto })
   async me(@CurrentUser() user: CurrentUserType): Promise<AccountSummaryDto> {
     return this.accounts.getSummary(user.account);
+  }
+
+  @Post('reset')
+  @HttpCode(200)
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
+  @ApiOperation({
+    summary: 'Reset the current account',
+    description:
+      'Удаляет текущего анонимного пользователя со всей историей (ордера, сделки, балансы) ' +
+      'и создаёт нового с балансом 10000 USDT. Cookie `account_id` обновляется на новый UUID.',
+  })
+  @ApiOkResponse({ type: AccountSummaryDto })
+  async reset(
+    @CurrentUser() user: CurrentUserType,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<AccountSummaryDto> {
+    const summary = await this.accounts.reset(user.id);
+    res.cookie(ACCOUNT_COOKIE_NAME, summary.userId, accountCookieOptions());
+    return summary;
   }
 }
