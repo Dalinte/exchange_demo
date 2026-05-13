@@ -1,0 +1,43 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+build/
+.next/
+out/
+*.tsbuildinfo
+
+# Coverage
+coverage/
+.nyc_output/
+
+# Lockfiles
+package-lock.json
+
+# Prisma generated client
+apps/api/generated/
+
+# Docs
+docs/
+
+# Assets
+*.png
+*.jpg
+*.jpeg
+*.svg
+*.ico
+
+# OS / IDE / tooling
+.DS_Store
+Thumbs.db
+.idea/
+.claude/
+.playwright-mcp/
+
+# Git
+.git/
+
+# Env
+.env
+.env.example

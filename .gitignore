@@ -32,3 +32,6 @@ apps/api/generated/
 
 # Claude
 .claude
+
+# mcp
+.playwright-mcp

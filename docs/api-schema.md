@@ -58,10 +58,10 @@ async me(): Promise<AccountSummaryDto> { ... }
 
 ## Swagger UI и cookie-аутентификация
 
-| Адрес                    | Что отдаёт          |
-| ------------------------ | ------------------- |
-| `/api/docs`              | Swagger UI (HTML)   |
-| `/api/docs-json`         | OpenAPI 3.0 JSON    |
+| Адрес            | Что отдаёт        |
+| ---------------- | ----------------- |
+| `/api/docs`      | Swagger UI (HTML) |
+| `/api/docs-json` | OpenAPI 3.0 JSON  |
 
 Аутентификация — httpOnly-cookie `account_id` (см. [auth.md](auth.md)). В Swagger UI она помечена как `cookieAuth`-схема. В `main.ts` включены опции `persistAuthorization` и `withCredentials`, поэтому cookie сохраняется между запросами в UI после первого ответа.
 

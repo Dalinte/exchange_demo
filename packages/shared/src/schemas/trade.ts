@@ -1,10 +1,5 @@
 import { z } from 'zod';
-import {
-  DecimalStringSchema,
-  OrderSideSchema,
-  TimestampSchema,
-  UuidSchema,
-} from './common.js';
+import { DecimalStringSchema, OrderSideSchema, TimestampSchema, UuidSchema } from './common.js';
 
 export const TradeSchema = z
   .object({

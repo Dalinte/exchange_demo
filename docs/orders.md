@@ -43,14 +43,14 @@
 
 ## Ошибки
 
-| Кейс                                | Код | Сообщение                                |
-| ----------------------------------- | --- | ---------------------------------------- |
-| Невалидное тело (Zod не пропустил)  | 400 | детализация валидации                    |
-| Пара не найдена / `isActive=false`  | 400 | `Trading pair not found or inactive`     |
-| `quantity` после округления < min   | 400 | `Quantity below minimum (...)`           |
-| Недостаточно `free` на нужном балансе | 400 | `Insufficient balance`                   |
-| Binance недоступен / таймаут         | 503 | `Price feed unavailable`                 |
-| `type=LIMIT`                         | 501 | `LIMIT orders are not supported yet`     |
+| Кейс                                  | Код | Сообщение                            |
+| ------------------------------------- | --- | ------------------------------------ |
+| Невалидное тело (Zod не пропустил)    | 400 | детализация валидации                |
+| Пара не найдена / `isActive=false`    | 400 | `Trading pair not found or inactive` |
+| `quantity` после округления < min     | 400 | `Quantity below minimum (...)`       |
+| Недостаточно `free` на нужном балансе | 400 | `Insufficient balance`               |
+| Binance недоступен / таймаут          | 503 | `Price feed unavailable`             |
+| `type=LIMIT`                          | 501 | `LIMIT orders are not supported yet` |
 
 ## Известные ограничения
 
