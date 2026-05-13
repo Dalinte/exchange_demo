@@ -1,7 +1,7 @@
 'use client';
 
 import { type ReactNode, useEffect, useRef, useState } from 'react';
-import { Icon } from '@/components/Icon';
+import { Icon } from '@/shared/ui/Icon';
 import { fmt, fmtPrice, fmtSigned } from '@/features/trade-terminal/format';
 import type { Pair } from '@/features/trade-terminal/types';
 
