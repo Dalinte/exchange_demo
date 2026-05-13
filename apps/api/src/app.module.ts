@@ -18,7 +18,7 @@ import { TradingPairsModule } from './trading-pairs/trading-pairs.module';
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: [join(__dirname, '../../../.env')],
+      envFilePath: [join(__dirname, '../../../../.env')],
       validate: validateEnv,
     }),
     ThrottlerModule.forRoot([{ ttl: 60_000, limit: 100 }]),
