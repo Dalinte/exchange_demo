@@ -26,6 +26,7 @@ demo-exchange/
 │   ├── api/                          # Приложение NestJS
 │   └── web/                          # Приложение Next.js (Feature-Sliced Design)
 │       ├── app/                      # Next.js App Router (layout, page, routes)
+│       ├── pages/                    # Пустая папка-сентинел для Next.js (не путать с FSD-слоем)
 │       └── src/
 │           ├── app/                  # FSD app — провайдеры, глобальные стили
 │           ├── pages/                # FSD pages — композиции под маршруты
@@ -80,7 +81,7 @@ demo-exchange/
 
 Правило импортов: слой может импортировать только из нижестоящих слоёв (app → pages → widgets → features → entities → shared). Внутри слоя слайсы изолированы — общий код выносится на уровень ниже.
 
-Next.js App Router живёт в `apps/web/app/` (корень приложения, не путать с FSD-слоем `src/app/`).
+Next.js App Router живёт в `apps/web/app/` (корень приложения, не путать с FSD-слоем `src/app/`). Рядом лежит пустая папка `apps/web/pages/` — она нужна, чтобы Next.js не пытался воспринять FSD-слой `src/pages/` как Pages Router.
 
 ## API Documentation
 

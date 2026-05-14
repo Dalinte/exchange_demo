@@ -8,7 +8,7 @@ export function SymbolSync() {
   const params = useParams<{ symbol?: string }>();
   const setSymbol = useMarketStore((s) => s.setSymbol);
   useEffect(() => {
-    if (params.symbol) setSymbol(params.symbol);
-  }, [params.symbol, setSymbol]);
+    if (params?.symbol) setSymbol(params.symbol);
+  }, [params?.symbol, setSymbol]);
   return null;
 }
