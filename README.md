@@ -50,8 +50,12 @@ demo-exchange/
 - [Анонимная идентификация](docs/auth.md) — cookie-based identity, $10000 USDT для каждого посетителя без регистрации.
 - [Схемы, валидация и OpenAPI](docs/api-schema.md) — Zod в `@exchange/shared` как источник правды; автоматическая валидация (`nestjs-zod`) и Swagger UI на `/api/docs`.
 - [Entity → Mapper → View](docs/api-mappers.md) — Prisma-сущности не уходят на провод напрямую; мапперы в `apps/api` собирают View-DTO для фронта и добавляют производные поля (`total`, `valueUsdt`, 24h-статистика).
+- [Market data REST](docs/market-data.md) — `GET /api/trading-pairs`, `GET /api/tickers`, `GET /api/klines`: метаданные пар, 24h-статы и свечи из Binance REST для initial load до подъёма WS.
 - [Размещение ордеров](docs/orders.md) — `POST /api/orders` для MARKET-ордеров, цена с Binance, атомарное списание/зачисление в одной транзакции.
+- [История ордеров и сделок](docs/history.md) — `GET /api/orders` и `GET /api/trades`: приватные read-only листинги с фильтрами `status`/`symbol`/`limit`, всегда `createdAt desc`.
+- [Балансы](docs/balances.md) — `GET /api/balances` как `Record<asset, BalanceItem>`: `free`/`locked`/`total` из БД + `valueUsdt` через `BinancePriceService` с fallback в `"0"`.
 - [Realtime market data](docs/realtime.md) — `ws://localhost:3001/ws` стрим свечей и тикеров: один upstream к Binance combined-streams с фанаутом на N клиентов.
+- [Состояние на фронте](docs/frontend-state.md) — TanStack Query (server state) + Zustand (UI state) + WS-апдейтеры, которые пишут в тот же Query Cache; оптимистичный апдейт балансов при размещении ордера и rollback при ошибке.
 
 ## API Documentation
 
