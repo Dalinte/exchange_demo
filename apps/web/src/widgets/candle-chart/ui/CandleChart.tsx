@@ -7,7 +7,7 @@ import { useKlines } from '@/shared/api/hooks/use-klines';
 import { useKlineStream } from '@/shared/ws/use-kline-stream';
 import { formatDecimal, formatPrice } from '@/shared/lib/format';
 import { useMarketStore } from '@/shared/stores/market-store';
-import { TIMEFRAMES, type Timeframe } from './timeframes';
+import { TIMEFRAMES, type Timeframe } from '../model/timeframes';
 
 interface CandleChartProps {
   timeframe: Timeframe;
