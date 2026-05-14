@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import type { GetOrdersQuery, OrderView } from '@exchange/shared';
-import { getOrders } from '../orders';
-import { queryKeys } from '../query-keys';
+import { getOrders } from './orders';
+import { queryKeys } from '@/shared/api/query-keys';
 
 export function useOrders(params: Partial<GetOrdersQuery> = {}) {
   return useQuery({

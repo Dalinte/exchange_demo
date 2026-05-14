@@ -1,5 +1,5 @@
 import { KlineListSchema, type Kline, type KlineInterval } from '@exchange/shared';
-import { apiFetch } from './client';
+import { apiFetch } from '@/shared/api/client';
 
 export async function getKlines(
   symbol: string,

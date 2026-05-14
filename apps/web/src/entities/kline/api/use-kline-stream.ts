@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import type { Kline, KlineInterval } from '@exchange/shared';
-import { getWsClient } from './client';
+import { getWsClient } from '@/shared/ws/client';
 import { queryKeys } from '@/shared/api/query-keys';
 
 const MAX_CANDLES = 500;

@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import type { GetTradesQuery } from '@exchange/shared';
-import { getTrades } from '../trades';
-import { queryKeys } from '../query-keys';
+import { getTrades } from './trades';
+import { queryKeys } from '@/shared/api/query-keys';
 
 export function useTrades(params: Partial<GetTradesQuery> = {}) {
   return useQuery({

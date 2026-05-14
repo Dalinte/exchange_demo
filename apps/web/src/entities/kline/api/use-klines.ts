@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
-import { getKlines } from '../klines';
-import { queryKeys } from '../query-keys';
+import { getKlines } from './klines';
+import { queryKeys } from '@/shared/api/query-keys';
 import type { KlineInterval } from '@exchange/shared';
 
 export function useKlines(symbol: string | undefined, interval: KlineInterval) {

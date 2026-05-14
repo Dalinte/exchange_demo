@@ -5,7 +5,7 @@ import {
   type CreateOrderDto,
   type OrderView,
 } from '@exchange/shared';
-import { apiFetch } from './client';
+import { apiFetch } from '@/shared/api/client';
 
 type GetOrdersParams = {
   status?: string;

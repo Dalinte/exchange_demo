@@ -1,5 +1,5 @@
 import { TradeViewListSchema, type TradeView } from '@exchange/shared';
-import { apiFetch } from './client';
+import { apiFetch } from '@/shared/api/client';
 
 type GetTradesParams = {
   symbol?: string;

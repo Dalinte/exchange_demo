@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
-import { getTradingPairs } from '../trading-pairs';
-import { queryKeys } from '../query-keys';
+import { getTradingPairs } from './trading-pairs';
+import { queryKeys } from '@/shared/api/query-keys';
 
 export function useTradingPairs() {
   return useQuery({
