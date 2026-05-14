@@ -121,8 +121,8 @@ export function getWsClient(): ExchangeWebSocketClient {
     throw new Error('WS client is browser-only');
   }
   if (!instance) {
-    const base = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
-    const wsUrl = base.replace(/^http/, 'ws') + '/ws';
+    const wsUrl = process.env.NEXT_PUBLIC_WS_URL;
+    if (!wsUrl) throw new Error('NEXT_PUBLIC_WS_URL is not set');
     instance = new ExchangeWebSocketClient(wsUrl);
     instance.connect();
   }
