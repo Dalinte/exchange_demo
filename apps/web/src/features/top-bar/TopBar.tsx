@@ -1,20 +1,33 @@
 'use client';
 
 import { type ReactNode, useEffect, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Icon } from '@/shared/ui/Icon';
-import { fmt, fmtPrice, fmtSigned } from '@/features/trade-terminal/format';
-import type { Pair } from '@/features/trade-terminal/types';
+import { useBalances } from '@/shared/api/hooks/use-balances';
+import { useTickers } from '@/shared/api/hooks/use-tickers';
+import {
+  formatDecimal,
+  formatPrice,
+  formatSignedPercent,
+} from '@/shared/lib/format';
+import { calculateTotalEquityUsdt } from '@/shared/lib/portfolio';
+import { formatPairDisplay } from '@/shared/lib/symbol';
+import { useMarketStore } from '@/shared/stores/market-store';
 
 interface TopBarProps {
-  pair: Pair;
-  pairs: Pair[];
-  onSelectPair: (p: Pair) => void;
-  totalUSDT: number;
   onReset: () => void;
 }
 
-export function TopBar({ pair, pairs, onSelectPair, totalUSDT, onReset }: TopBarProps) {
-  const chgPos = pair.chg >= 0;
+export function TopBar({ onReset }: TopBarProps) {
+  const symbol = useMarketStore((s) => s.symbol);
+  const router = useRouter();
+  const { data: tickers } = useTickers();
+  const { data: balances } = useBalances();
+
+  const active = tickers?.find((t) => t.symbol === symbol);
+  const chgPos = active ? Number(active.priceChangePercent24h) >= 0 : true;
+  const totalEquity = calculateTotalEquityUsdt(balances);
+
   const [pickerOpen, setPickerOpen] = useState(false);
   const [query, setQuery] = useState('');
   const wrapRef = useRef<HTMLDivElement | null>(null);
@@ -35,7 +48,10 @@ export function TopBar({ pair, pairs, onSelectPair, totalUSDT, onReset }: TopBar
     };
   }, [pickerOpen]);
 
-  const filtered = pairs.filter((p) => p.sym.toLowerCase().includes(query.toLowerCase()));
+  const q = query.toLowerCase();
+  const filtered = (tickers ?? []).filter(
+    (t) => t.symbol.toLowerCase().includes(q) || t.baseAsset.toLowerCase().includes(q),
+  );
 
   return (
     <div
@@ -79,7 +95,7 @@ export function TopBar({ pair, pairs, onSelectPair, totalUSDT, onReset }: TopBar
               color: 'var(--text-0)',
             }}
           >
-            <span>{pair.sym}</span>
+            <span>{active ? formatPairDisplay(active) : '...'}</span>
             <span style={{ color: 'var(--text-2)', display: 'inline-flex' }}>
               <Icon name="caret-down" size={12} />
             </span>
@@ -144,44 +160,65 @@ export function TopBar({ pair, pairs, onSelectPair, totalUSDT, onReset }: TopBar
               </div>
 
               <div style={{ flex: 1, overflowY: 'auto' }}>
-                {filtered.map((p) => {
-                  const isActive = p.sym === pair.sym;
-                  const pos = p.chg >= 0;
-                  return (
-                    <div
-                      key={p.sym}
-                      className={'pair-row' + (isActive ? ' active' : '')}
-                      onClick={() => {
-                        onSelectPair(p);
-                        setPickerOpen(false);
-                        setQuery('');
-                      }}
-                      style={{
-                        display: 'grid',
-                        gridTemplateColumns: '1fr 100px 60px',
-                        padding: '8px 12px',
-                        fontSize: 12,
-                        cursor: 'default',
-                        borderLeft: isActive ? '2px solid var(--accent)' : '2px solid transparent',
-                      }}
-                    >
-                      <span style={{ color: isActive ? 'var(--text-0)' : 'var(--text-1)' }}>
-                        <span style={{ fontWeight: 500 }}>{p.base}</span>
-                        <span style={{ color: 'var(--text-3)' }}>/{p.quote}</span>
-                      </span>
-                      <span className="mono" style={{ textAlign: 'right', color: 'var(--text-0)' }}>
-                        {fmtPrice(p.price)}
-                      </span>
-                      <span
-                        className={'mono ' + (pos ? 'up' : 'down')}
-                        style={{ textAlign: 'right', fontSize: 11 }}
+                {tickers === undefined && (
+                  <div
+                    style={{
+                      display: 'grid',
+                      gridTemplateColumns: '1fr 100px 60px',
+                      padding: '8px 12px',
+                      fontSize: 12,
+                      color: 'var(--text-3)',
+                    }}
+                  >
+                    <span>Loading…</span>
+                    <span />
+                    <span />
+                  </div>
+                )}
+                {tickers !== undefined &&
+                  filtered.map((t) => {
+                    const isActive = t.symbol === symbol;
+                    const pos = Number(t.priceChangePercent24h) >= 0;
+                    return (
+                      <div
+                        key={t.symbol}
+                        className={'pair-row' + (isActive ? ' active' : '')}
+                        onClick={() => {
+                          router.push(`/trade/${t.symbol}`);
+                          setPickerOpen(false);
+                          setQuery('');
+                        }}
+                        style={{
+                          display: 'grid',
+                          gridTemplateColumns: '1fr 100px 60px',
+                          padding: '8px 12px',
+                          fontSize: 12,
+                          cursor: 'default',
+                          borderLeft: isActive
+                            ? '2px solid var(--accent)'
+                            : '2px solid transparent',
+                        }}
                       >
-                        {fmtSigned(p.chg, 2)}%
-                      </span>
-                    </div>
-                  );
-                })}
-                {filtered.length === 0 && (
+                        <span style={{ color: isActive ? 'var(--text-0)' : 'var(--text-1)' }}>
+                          <span style={{ fontWeight: 500 }}>{t.baseAsset}</span>
+                          <span style={{ color: 'var(--text-3)' }}>/{t.quoteAsset}</span>
+                        </span>
+                        <span
+                          className="mono"
+                          style={{ textAlign: 'right', color: 'var(--text-0)' }}
+                        >
+                          {formatPrice(t.lastPrice)}
+                        </span>
+                        <span
+                          className={'mono ' + (pos ? 'up' : 'down')}
+                          style={{ textAlign: 'right', fontSize: 11 }}
+                        >
+                          {formatSignedPercent(t.priceChangePercent24h)}
+                        </span>
+                      </div>
+                    );
+                  })}
+                {tickers !== undefined && filtered.length === 0 && (
                   <div
                     style={{
                       padding: 24,
@@ -207,20 +244,20 @@ export function TopBar({ pair, pairs, onSelectPair, totalUSDT, onReset }: TopBar
             letterSpacing: '-.01em',
           }}
         >
-          {fmtPrice(pair.price)}
+          {active ? formatPrice(active.lastPrice) : '—'}
         </div>
 
         <Stat label="24h Change" mono className={chgPos ? 'up' : 'down'}>
-          {fmtSigned(pair.chg, 2)}%
+          {active ? formatSignedPercent(active.priceChangePercent24h) : '—'}
         </Stat>
         <Stat label="24h High" mono>
-          {fmtPrice(pair.high)}
+          {active ? formatPrice(active.highPrice24h) : '—'}
         </Stat>
         <Stat label="24h Low" mono>
-          {fmtPrice(pair.low)}
+          {active ? formatPrice(active.lowPrice24h) : '—'}
         </Stat>
-        <Stat label={`24h Volume(${pair.base})`} mono>
-          {pair.vol}
+        <Stat label={`24h Volume(${active?.baseAsset ?? ''})`} mono>
+          {active ? formatDecimal(active.volume24h, 2) : '—'}
         </Stat>
       </div>
 
@@ -237,7 +274,7 @@ export function TopBar({ pair, pairs, onSelectPair, totalUSDT, onReset }: TopBar
             Portfolio
           </div>
           <div className="mono" style={{ fontSize: 15, fontWeight: 600 }}>
-            {fmt(totalUSDT, 2)}{' '}
+            {formatDecimal(totalEquity, 2)}{' '}
             <span style={{ color: 'var(--text-2)', fontSize: 11, fontWeight: 400 }}>USDT</span>
           </div>
         </div>

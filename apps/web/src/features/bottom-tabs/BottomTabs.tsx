@@ -1,40 +1,36 @@
 'use client';
 
 import { useState } from 'react';
-import { fmt, fmtPrice, timeOf } from '@/features/trade-terminal/format';
-import { PAIRS } from '@/features/trade-terminal/mocks';
-import type {
-  Balances as BalancesType,
-  HistoryOrder,
-  OpenOrder,
-  Pair,
-  TradeRecord,
-} from '@/features/trade-terminal/types';
+import type { BalanceMap, OrderView, TradeView, TradingPairWithStats } from '@exchange/shared';
+import { useBalances } from '@/shared/api/hooks/use-balances';
+import { useOpenOrders, useOrderHistory } from '@/shared/api/hooks/use-orders';
+import { useTickers } from '@/shared/api/hooks/use-tickers';
+import { useTradeHistory } from '@/shared/api/hooks/use-trades';
+import { formatDecimal, formatPrice, formatTime } from '@/shared/lib/format';
 
 interface BottomTabsProps {
-  openOrders: OpenOrder[];
-  orderHistory: HistoryOrder[];
-  tradeHistory: TradeRecord[];
-  balances: BalancesType;
-  pair: Pair;
   onCancel: (id: string) => void;
 }
 
 type TabId = 'open' | 'history' | 'trades' | 'balances';
 
-export function BottomTabs({
-  openOrders,
-  orderHistory,
-  tradeHistory,
-  balances,
-  onCancel,
-}: BottomTabsProps) {
+function displaySymbol(sym: string, tickers: TradingPairWithStats[] | undefined): string {
+  const t = tickers?.find((x) => x.symbol === sym);
+  return t ? `${t.baseAsset}/${t.quoteAsset}` : sym;
+}
+
+export function BottomTabs({ onCancel }: BottomTabsProps) {
   const [tab, setTab] = useState<TabId>('open');
+  const { data: openOrders = [] } = useOpenOrders();
+  const { data: orderHistory = [] } = useOrderHistory();
+  const { data: trades = [] } = useTradeHistory();
+  const { data: balances } = useBalances();
+  const { data: tickers } = useTickers();
 
   const tabs: { id: TabId; label: string; count?: number }[] = [
     { id: 'open', label: 'Open Orders', count: openOrders.length },
     { id: 'history', label: 'Order History', count: orderHistory.length },
-    { id: 'trades', label: 'Trade History', count: tradeHistory.length },
+    { id: 'trades', label: 'Trade History', count: trades.length },
     { id: 'balances', label: 'Balances' },
   ];
 
@@ -76,16 +72,26 @@ export function BottomTabs({
       </div>
 
       <div style={{ flex: 1, overflowY: 'auto', minHeight: 0 }}>
-        {tab === 'open' && <OpenOrders orders={openOrders} onCancel={onCancel} />}
-        {tab === 'history' && <OrderHistory orders={orderHistory} />}
-        {tab === 'trades' && <TradeHistory trades={tradeHistory} />}
+        {tab === 'open' && (
+          <OpenOrders orders={openOrders} tickers={tickers} onCancel={onCancel} />
+        )}
+        {tab === 'history' && <OrderHistory orders={orderHistory} tickers={tickers} />}
+        {tab === 'trades' && <TradeHistory trades={trades} tickers={tickers} />}
         {tab === 'balances' && <Balances balances={balances} />}
       </div>
     </div>
   );
 }
 
-function OpenOrders({ orders, onCancel }: { orders: OpenOrder[]; onCancel: (id: string) => void }) {
+function OpenOrders({
+  orders,
+  tickers,
+  onCancel,
+}: {
+  orders: OrderView[];
+  tickers: TradingPairWithStats[] | undefined;
+  onCancel: (id: string) => void;
+}) {
   if (!orders.length) return <div className="empty">No open orders</div>;
   return (
     <table className="tbl">
@@ -106,22 +112,22 @@ function OpenOrders({ orders, onCancel }: { orders: OpenOrder[]; onCancel: (id: 
         {orders.map((o) => (
           <tr key={o.id}>
             <td className="mono" style={{ color: 'var(--text-2)' }}>
-              {timeOf(new Date(o.ts))}
+              {formatTime(o.createdAt)}
             </td>
-            <td>{o.pair.sym}</td>
-            <td style={{ textTransform: 'capitalize' }}>{o.type}</td>
+            <td>{displaySymbol(o.symbol, tickers)}</td>
+            <td style={{ textTransform: 'capitalize' }}>{o.type.toLowerCase()}</td>
             <td
-              className={o.side === 'buy' ? 'up' : 'down'}
+              className={o.side === 'BUY' ? 'up' : 'down'}
               style={{ textTransform: 'capitalize', fontWeight: 500 }}
             >
-              {o.side}
+              {o.side.toLowerCase()}
             </td>
-            <td className="mono right">{fmtPrice(o.price)}</td>
-            <td className="mono right">{o.amount.toFixed(6)}</td>
+            <td className="mono right">{o.price ? formatPrice(o.price) : '—'}</td>
+            <td className="mono right">{formatDecimal(o.quantity, 6)}</td>
             <td className="mono right" style={{ color: 'var(--text-2)' }}>
-              0.000000
+              {formatDecimal(o.filledQuantity, 6)}
             </td>
-            <td className="mono right">{fmt(o.total, 2)}</td>
+            <td className="mono right">{formatDecimal(o.total, 2)}</td>
             <td className="right">
               <button
                 className="btn btn-ghost"
@@ -138,7 +144,13 @@ function OpenOrders({ orders, onCancel }: { orders: OpenOrder[]; onCancel: (id: 
   );
 }
 
-function OrderHistory({ orders }: { orders: HistoryOrder[] }) {
+function OrderHistory({
+  orders,
+  tickers,
+}: {
+  orders: OrderView[];
+  tickers: TradingPairWithStats[] | undefined;
+}) {
   if (!orders.length) return <div className="empty">No completed orders yet</div>;
   return (
     <table className="tbl">
@@ -155,43 +167,52 @@ function OrderHistory({ orders }: { orders: HistoryOrder[] }) {
         </tr>
       </thead>
       <tbody>
-        {orders.map((o) => (
-          <tr key={o.id}>
-            <td className="mono" style={{ color: 'var(--text-2)' }}>
-              {timeOf(new Date(o.ts))}
-            </td>
-            <td>{o.pair}</td>
-            <td style={{ textTransform: 'capitalize' }}>{o.type}</td>
-            <td
-              className={o.side === 'buy' ? 'up' : 'down'}
-              style={{ textTransform: 'capitalize', fontWeight: 500 }}
-            >
-              {o.side}
-            </td>
-            <td className="mono right">{fmtPrice(o.price)}</td>
-            <td className="mono right">{o.amount.toFixed(6)}</td>
-            <td className="mono right">{fmt(o.total, 2)}</td>
-            <td>
-              <span
-                style={{
-                  fontSize: 11,
-                  padding: '2px 6px',
-                  borderRadius: 3,
-                  background: o.status === 'Filled' ? 'var(--up-bg)' : 'var(--down-bg)',
-                  color: o.status === 'Filled' ? 'var(--up)' : 'var(--down)',
-                }}
+        {orders.map((o) => {
+          const isFilled = o.status === 'FILLED';
+          return (
+            <tr key={o.id}>
+              <td className="mono" style={{ color: 'var(--text-2)' }}>
+                {formatTime(o.createdAt)}
+              </td>
+              <td>{displaySymbol(o.symbol, tickers)}</td>
+              <td style={{ textTransform: 'capitalize' }}>{o.type.toLowerCase()}</td>
+              <td
+                className={o.side === 'BUY' ? 'up' : 'down'}
+                style={{ textTransform: 'capitalize', fontWeight: 500 }}
               >
-                {o.status}
-              </span>
-            </td>
-          </tr>
-        ))}
+                {o.side.toLowerCase()}
+              </td>
+              <td className="mono right">{o.price ? formatPrice(o.price) : '—'}</td>
+              <td className="mono right">{formatDecimal(o.quantity, 6)}</td>
+              <td className="mono right">{formatDecimal(o.total, 2)}</td>
+              <td>
+                <span
+                  style={{
+                    fontSize: 11,
+                    padding: '2px 6px',
+                    borderRadius: 3,
+                    background: isFilled ? 'var(--up-bg)' : 'var(--down-bg)',
+                    color: isFilled ? 'var(--up)' : 'var(--down)',
+                  }}
+                >
+                  {isFilled ? 'Filled' : 'Cancelled'}
+                </span>
+              </td>
+            </tr>
+          );
+        })}
       </tbody>
     </table>
   );
 }
 
-function TradeHistory({ trades }: { trades: TradeRecord[] }) {
+function TradeHistory({
+  trades,
+  tickers,
+}: {
+  trades: TradeView[];
+  tickers: TradingPairWithStats[] | undefined;
+}) {
   if (!trades.length) return <div className="empty">No trades yet</div>;
   return (
     <table className="tbl">
@@ -210,20 +231,20 @@ function TradeHistory({ trades }: { trades: TradeRecord[] }) {
         {trades.map((t) => (
           <tr key={t.id}>
             <td className="mono" style={{ color: 'var(--text-2)' }}>
-              {timeOf(new Date(t.ts))}
+              {formatTime(t.createdAt)}
             </td>
-            <td>{t.pair}</td>
+            <td>{displaySymbol(t.symbol, tickers)}</td>
             <td
-              className={t.side === 'buy' ? 'up' : 'down'}
+              className={t.side === 'BUY' ? 'up' : 'down'}
               style={{ textTransform: 'capitalize', fontWeight: 500 }}
             >
-              {t.side}
+              {t.side.toLowerCase()}
             </td>
-            <td className="mono right">{fmtPrice(t.price)}</td>
-            <td className="mono right">{t.amount.toFixed(6)}</td>
-            <td className="mono right">{fmt(t.total, 2)}</td>
+            <td className="mono right">{formatPrice(t.price)}</td>
+            <td className="mono right">{formatDecimal(t.quantity, 6)}</td>
+            <td className="mono right">{formatDecimal(t.quoteAmount, 2)}</td>
             <td className="mono right" style={{ color: 'var(--text-2)' }}>
-              {fmt(t.fee, 4)} {t.feeCcy}
+              {formatDecimal(t.fee, 4)} {t.feeAsset}
             </td>
           </tr>
         ))}
@@ -232,8 +253,28 @@ function TradeHistory({ trades }: { trades: TradeRecord[] }) {
   );
 }
 
-function Balances({ balances }: { balances: BalancesType }) {
-  const rows = Object.entries(balances).filter(([k, v]) => v > 0 || k === 'USDT' || k === 'BTC');
+function Balances({ balances }: { balances: BalanceMap | undefined }) {
+  if (!balances) {
+    return (
+      <table className="tbl">
+        <thead>
+          <tr>
+            <th>Asset</th>
+            <th className="right">Total</th>
+            <th className="right">Available</th>
+            <th className="right">In Order</th>
+            <th className="right">Value (USDT)</th>
+          </tr>
+        </thead>
+        <tbody />
+      </table>
+    );
+  }
+
+  const rows = Object.entries(balances).filter(
+    ([k, b]) => Number(b.total) > 0 || k === 'USDT' || k === 'BTC',
+  );
+
   return (
     <table className="tbl">
       <thead>
@@ -246,21 +287,17 @@ function Balances({ balances }: { balances: BalancesType }) {
         </tr>
       </thead>
       <tbody>
-        {rows.map(([k, v]) => {
-          const matchedPair = PAIRS.find((p) => p.base === k);
-          const px = matchedPair ? matchedPair.price : k === 'USDT' ? 1 : 0;
-          return (
-            <tr key={k}>
-              <td style={{ fontWeight: 500 }}>{k}</td>
-              <td className="mono right">{fmt(v, 6)}</td>
-              <td className="mono right">{fmt(v, 6)}</td>
-              <td className="mono right" style={{ color: 'var(--text-2)' }}>
-                0.000000
-              </td>
-              <td className="mono right">{fmt(v * px, 2)}</td>
-            </tr>
-          );
-        })}
+        {rows.map(([k, b]) => (
+          <tr key={k}>
+            <td style={{ fontWeight: 500 }}>{k}</td>
+            <td className="mono right">{formatDecimal(b.total, 6)}</td>
+            <td className="mono right">{formatDecimal(b.free, 6)}</td>
+            <td className="mono right" style={{ color: 'var(--text-2)' }}>
+              {formatDecimal(b.locked, 6)}
+            </td>
+            <td className="mono right">{formatDecimal(b.valueUsdt, 2)}</td>
+          </tr>
+        ))}
       </tbody>
     </table>
   );
