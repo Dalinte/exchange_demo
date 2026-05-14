@@ -10,6 +10,7 @@ import { BalancesModule } from './balances/balances.module';
 import { validateEnv } from './config/env.schema';
 import { ExchangeModule } from './exchange/exchange.module';
 import { HealthModule } from './health/health.module';
+import { KlinesModule } from './klines/klines.module';
 import { OrdersModule } from './orders/orders.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { TradesModule } from './trades/trades.module';
@@ -26,6 +27,7 @@ import { TradingPairsModule } from './trading-pairs/trading-pairs.module';
     PrismaModule,
     HealthModule,
     TradingPairsModule,
+    KlinesModule,
     AccountsModule,
     BalancesModule,
     TradesModule,

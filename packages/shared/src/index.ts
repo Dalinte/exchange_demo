@@ -4,6 +4,7 @@ export * from './schemas/views/balance.js';
 export * from './schemas/views/order.js';
 export * from './schemas/views/trade.js';
 export * from './schemas/views/health.js';
+export * from './schemas/views/kline.js';
 export * from './schemas/dto/create-order.js';
 export * from './schemas/dto/queries.js';
 export * from './schemas/ws-messages.js';

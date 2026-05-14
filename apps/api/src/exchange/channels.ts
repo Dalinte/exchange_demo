@@ -1,14 +1,16 @@
-import type { KlineUpdate, TickerUpdate } from '@exchange/shared';
-
-export const ALLOWED_INTERVALS = ['1m', '5m', '15m', '1h', '4h', '1d'] as const;
-export type KlineInterval = (typeof ALLOWED_INTERVALS)[number];
+import {
+  KlineIntervalSchema,
+  type KlineInterval,
+  type KlineUpdate,
+  type TickerUpdate,
+} from '@exchange/shared';
 
 export type ParsedChannel =
   | { kind: 'kline'; symbol: string; interval: KlineInterval }
   | { kind: 'ticker'; symbol: string };
 
 function isKlineInterval(value: string): value is KlineInterval {
-  return (ALLOWED_INTERVALS as readonly string[]).includes(value);
+  return KlineIntervalSchema.safeParse(value).success;
 }
 
 export function parseChannel(channel: string): ParsedChannel | null {

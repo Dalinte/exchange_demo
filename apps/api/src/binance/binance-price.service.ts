@@ -1,4 +1,9 @@
-import { Injectable, ServiceUnavailableException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  ServiceUnavailableException,
+} from '@nestjs/common';
+import { KlineSchema, type Kline, type KlineInterval } from '@exchange/shared';
 import Decimal from 'decimal.js';
 
 const CACHE_TTL_MS = 1000;
@@ -6,6 +11,7 @@ const TICKER24H_CACHE_TTL_MS = 5_000;
 const REQUEST_TIMEOUT_MS = 5000;
 const TICKER_URL = 'https://api.binance.com/api/v3/ticker/price';
 const TICKER_24H_URL = 'https://api.binance.com/api/v3/ticker/24hr';
+const KLINES_URL = 'https://api.binance.com/api/v3/klines';
 
 interface CacheEntry {
   price: Decimal;
@@ -66,6 +72,41 @@ export class BinancePriceService {
     const data = await this.fetchTicker24h(symbol);
     this.ticker24hCache.set(symbol, { data, fetchedAt: Date.now() });
     return data;
+  }
+
+  async getKlines(
+    symbol: string,
+    interval: KlineInterval,
+    limit: number,
+  ): Promise<Kline[]> {
+    const url = `${KLINES_URL}?symbol=${encodeURIComponent(symbol)}&interval=${interval}&limit=${limit}`;
+    const raw = await this.requestJson<unknown>(url, {
+      errorMessage: 'Klines feed unavailable',
+      parseBinanceError: true,
+    });
+    if (!Array.isArray(raw)) {
+      throw new ServiceUnavailableException('Klines feed unavailable');
+    }
+    try {
+      return raw.map((row) => {
+        if (!Array.isArray(row)) {
+          throw new ServiceUnavailableException('Klines feed unavailable');
+        }
+        return KlineSchema.parse({
+          openTime: row[0],
+          open: row[1],
+          high: row[2],
+          low: row[3],
+          close: row[4],
+          volume: row[5],
+          closeTime: row[6],
+          quoteVolume: row[7],
+          trades: row[8],
+        });
+      });
+    } catch {
+      throw new ServiceUnavailableException('Klines feed unavailable');
+    }
   }
 
   async getAllTickers24h(): Promise<Map<string, BinanceTicker24h>> {
@@ -146,7 +187,11 @@ export class BinancePriceService {
     return map;
   }
 
-  private async requestJson<T>(url: string): Promise<T> {
+  private async requestJson<T>(
+    url: string,
+    options: { errorMessage?: string; parseBinanceError?: boolean } = {},
+  ): Promise<T> {
+    const errorMessage = options.errorMessage ?? 'Price feed unavailable';
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
 
@@ -154,19 +199,30 @@ export class BinancePriceService {
     try {
       response = await fetch(url, { signal: controller.signal });
     } catch {
-      throw new ServiceUnavailableException('Price feed unavailable');
+      throw new ServiceUnavailableException(errorMessage);
     } finally {
       clearTimeout(timeout);
     }
 
+    if (options.parseBinanceError && response.status === 400) {
+      let message = 'Invalid request to Binance';
+      try {
+        const body = (await response.json()) as { msg?: unknown };
+        if (typeof body.msg === 'string') message = body.msg;
+      } catch {
+        // дефолтное сообщение
+      }
+      throw new BadRequestException(message);
+    }
+
     if (!response.ok) {
-      throw new ServiceUnavailableException('Price feed unavailable');
+      throw new ServiceUnavailableException(errorMessage);
     }
 
     try {
       return (await response.json()) as T;
     } catch {
-      throw new ServiceUnavailableException('Price feed unavailable');
+      throw new ServiceUnavailableException(errorMessage);
     }
   }
 }
