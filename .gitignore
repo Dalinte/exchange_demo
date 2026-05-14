@@ -32,6 +32,7 @@ apps/api/generated/
 
 # Claude
 .claude
+docs/superpowers
 
 # mcp
 .playwright-mcp
