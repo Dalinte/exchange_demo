@@ -3,6 +3,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { type ReactNode, useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
+import { toast } from 'sonner';
 import { z } from 'zod';
 import { useCreateOrder } from '@/shared/api/hooks/mutations/use-create-order';
 import { useBalances } from '@/shared/api/hooks/use-balances';
@@ -12,7 +13,6 @@ import { parseApiError } from '@/shared/lib/api-error';
 import { Decimal, toFixedDown } from '@/shared/lib/decimal';
 import { formatDecimal, formatPrice } from '@/shared/lib/format';
 import { useMarketStore } from '@/shared/stores/market-store';
-import { usePushToast } from '@/shared/stores/toast-store';
 
 interface OrderFormProps {
   presetPrice: string | null;
@@ -57,7 +57,6 @@ export function OrderForm({ presetPrice, onPresetConsumed }: OrderFormProps) {
   const [percent, setPercent] = useState(0);
 
   const createOrder = useCreateOrder();
-  const pushToast = usePushToast();
 
   useEffect(() => {
     reset({ side, type, quantity: '', price: currentPrice });
@@ -117,7 +116,7 @@ export function OrderForm({ presetPrice, onPresetConsumed }: OrderFormProps) {
 
   const onSubmit = handleSubmit((values) => {
     if (values.type === 'LIMIT') {
-      pushToast({ title: 'Limit orders are not implemented yet', kind: 'error' });
+      toast.error('Limit orders are not implemented yet');
       return;
     }
     createOrder.mutate(
@@ -126,16 +125,18 @@ export function OrderForm({ presetPrice, onPresetConsumed }: OrderFormProps) {
         onSuccess: (order) => {
           const verb = values.side === 'BUY' ? 'Bought' : 'Sold';
           const fillPrice = order.averageFillPrice ?? ticker?.lastPrice ?? '0';
-          pushToast({
-            title: `${verb} ${formatDecimal(order.filledQuantity, quantityPrecision)} ${baseAsset}`,
-            sub: `at ~${formatPrice(fillPrice)} ${quoteAsset}`,
-            kind: values.side === 'BUY' ? '' : 'sell',
-          });
+          const title = `${verb} ${formatDecimal(order.filledQuantity, quantityPrecision)} ${baseAsset}`;
+          const description = `at ~${formatPrice(fillPrice)} ${quoteAsset}`;
+          if (values.side === 'BUY') {
+            toast.success(title, { description });
+          } else {
+            toast(title, { description, className: 'toast-sell' });
+          }
           reset({ side: values.side, type: 'MARKET', quantity: '', price: currentPrice });
           setPercent(0);
         },
         onError: (error) => {
-          pushToast({ title: parseApiError(error), kind: 'error' });
+          toast.error(parseApiError(error));
         },
       },
     );

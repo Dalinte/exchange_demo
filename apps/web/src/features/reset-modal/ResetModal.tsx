@@ -1,8 +1,8 @@
 'use client';
 
+import { toast } from 'sonner';
 import { useResetAccount } from '@/shared/api/hooks/mutations/use-reset-account';
 import { parseApiError } from '@/shared/lib/api-error';
-import { usePushToast } from '@/shared/stores/toast-store';
 
 interface ResetModalProps {
   onClose: () => void;
@@ -10,7 +10,6 @@ interface ResetModalProps {
 
 export function ResetModal({ onClose }: ResetModalProps) {
   const resetAccount = useResetAccount();
-  const pushToast = usePushToast();
 
   return (
     <div className="modal-backdrop" onClick={onClose}>
@@ -51,10 +50,10 @@ export function ResetModal({ onClose }: ResetModalProps) {
             onClick={() =>
               resetAccount.mutate(undefined, {
                 onSuccess: () => {
-                  pushToast({ title: 'Account reset to starting balance' });
+                  toast.success('Account reset to starting balance');
                   onClose();
                 },
-                onError: (error) => pushToast({ title: parseApiError(error), kind: 'error' }),
+                onError: (error) => toast.error(parseApiError(error)),
               })
             }
             disabled={resetAccount.isPending}

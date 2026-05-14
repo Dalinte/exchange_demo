@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { toast } from 'sonner';
 import type { BalanceMap, OrderView, TradeView, TradingPairWithStats } from '@exchange/shared';
 import { useCancelOrder } from '@/shared/api/hooks/mutations/use-cancel-order';
 import { useBalances } from '@/shared/api/hooks/use-balances';
@@ -9,7 +10,6 @@ import { useTickers } from '@/shared/api/hooks/use-tickers';
 import { useTradeHistory } from '@/shared/api/hooks/use-trades';
 import { parseApiError } from '@/shared/lib/api-error';
 import { formatDecimal, formatPrice, formatTime } from '@/shared/lib/format';
-import { usePushToast } from '@/shared/stores/toast-store';
 
 type TabId = 'open' | 'history' | 'trades' | 'balances';
 
@@ -88,7 +88,6 @@ function OpenOrders({
   tickers: TradingPairWithStats[] | undefined;
 }) {
   const cancelOrder = useCancelOrder();
-  const pushToast = usePushToast();
 
   if (!orders.length) return <div className="empty">No open orders</div>;
   return (
@@ -135,9 +134,8 @@ function OpenOrders({
                   disabled={isCancelling}
                   onClick={() =>
                     cancelOrder.mutate(order.id, {
-                      onSuccess: () => pushToast({ title: 'Order cancelled' }),
-                      onError: (error) =>
-                        pushToast({ title: parseApiError(error), kind: 'error' }),
+                      onSuccess: () => toast.success('Order cancelled'),
+                      onError: (error) => toast.error(parseApiError(error)),
                     })
                   }
                 >

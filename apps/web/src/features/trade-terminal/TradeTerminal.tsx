@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { Toaster } from 'sonner';
 import { BottomTabs } from '@/features/bottom-tabs/BottomTabs';
 import { CandleChart } from '@/features/candle-chart/CandleChart';
 import type { Timeframe } from '@/features/candle-chart/timeframes';
@@ -8,7 +9,6 @@ import { OrderBook } from '@/features/order-book/OrderBook';
 import { OrderForm } from '@/features/order-form/OrderForm';
 import { ResetModal } from '@/features/reset-modal/ResetModal';
 import { StatusFooter } from '@/features/status-footer/StatusFooter';
-import { Toasts } from '@/features/toasts/Toasts';
 import { TopBar } from '@/features/top-bar/TopBar';
 import { SymbolSync } from '@/shared/stores/SymbolSync';
 import { useMarketStore } from '@/shared/stores/market-store';
@@ -59,7 +59,7 @@ export function TradeTerminal({ initialSymbol }: TradeTerminalProps) {
       </div>
 
       {resetOpen && <ResetModal onClose={() => setResetOpen(false)} />}
-      <Toasts />
+      <Toaster theme="light" position="top-right" />
 
       <StatusFooter />
     </div>
