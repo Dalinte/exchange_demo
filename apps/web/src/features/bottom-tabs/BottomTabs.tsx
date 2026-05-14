@@ -8,10 +8,6 @@ import { useTickers } from '@/shared/api/hooks/use-tickers';
 import { useTradeHistory } from '@/shared/api/hooks/use-trades';
 import { formatDecimal, formatPrice, formatTime } from '@/shared/lib/format';
 
-interface BottomTabsProps {
-  onCancel: (id: string) => void;
-}
-
 type TabId = 'open' | 'history' | 'trades' | 'balances';
 
 function displaySymbol(sym: string, tickers: TradingPairWithStats[] | undefined): string {
@@ -19,7 +15,7 @@ function displaySymbol(sym: string, tickers: TradingPairWithStats[] | undefined)
   return t ? `${t.baseAsset}/${t.quoteAsset}` : sym;
 }
 
-export function BottomTabs({ onCancel }: BottomTabsProps) {
+export function BottomTabs() {
   const [tab, setTab] = useState<TabId>('open');
   const { data: openOrders = [] } = useOpenOrders();
   const { data: orderHistory = [] } = useOrderHistory();
@@ -72,7 +68,7 @@ export function BottomTabs({ onCancel }: BottomTabsProps) {
       </div>
 
       <div style={{ flex: 1, overflowY: 'auto', minHeight: 0 }}>
-        {tab === 'open' && <OpenOrders orders={openOrders} tickers={tickers} onCancel={onCancel} />}
+        {tab === 'open' && <OpenOrders orders={openOrders} tickers={tickers} />}
         {tab === 'history' && <OrderHistory orders={orderHistory} tickers={tickers} />}
         {tab === 'trades' && <TradeHistory trades={trades} tickers={tickers} />}
         {tab === 'balances' && <Balances balances={balances} />}
@@ -84,11 +80,9 @@ export function BottomTabs({ onCancel }: BottomTabsProps) {
 function OpenOrders({
   orders,
   tickers,
-  onCancel,
 }: {
   orders: OrderView[];
   tickers: TradingPairWithStats[] | undefined;
-  onCancel: (id: string) => void;
 }) {
   if (!orders.length) return <div className="empty">No open orders</div>;
   return (
@@ -130,7 +124,9 @@ function OpenOrders({
               <button
                 className="btn btn-ghost"
                 style={{ height: 24, padding: '0 8px', fontSize: 11 }}
-                onClick={() => onCancel(o.id)}
+                onClick={() => {
+                  /* Промт 5F */
+                }}
               >
                 Cancel
               </button>

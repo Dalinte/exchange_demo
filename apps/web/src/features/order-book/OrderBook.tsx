@@ -1,26 +1,58 @@
 'use client';
 
+import { useEffect, useRef, useState } from 'react';
+import { useTickers } from '@/shared/api/hooks/use-tickers';
 import { formatPrice } from '@/shared/lib/format';
-import type { MockPair, OrderBookLevel, OrderBookSnapshot } from '@/features/trade-terminal/types';
+import { useMarketStore } from '@/shared/stores/market-store';
+import { genOrderBook } from '@/features/trade-terminal/mocks';
+import type { OrderBookLevel, OrderBookSnapshot } from '@/features/trade-terminal/types';
 
 interface OrderBookProps {
-  book: OrderBookSnapshot | null;
-  pair: MockPair;
-  onPriceClick?: (price: number) => void;
+  onPriceClick?: (price: string) => void;
 }
 
-export function OrderBook({ book, pair, onPriceClick }: OrderBookProps) {
+export function OrderBook({ onPriceClick }: OrderBookProps) {
+  const symbol = useMarketStore((s) => s.symbol);
+  const { data: tickers } = useTickers();
+  const ticker = tickers?.find((t) => t.symbol === symbol);
+  const currentPrice = ticker?.lastPrice;
+  const baseAsset = ticker?.baseAsset ?? '';
+  const quoteAsset = ticker?.quoteAsset ?? 'USDT';
+
+  const [book, setBook] = useState<OrderBookSnapshot | null>(null);
+  const midRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    midRef.current = null;
+    setBook(null);
+  }, [symbol]);
+
+  useEffect(() => {
+    if (!currentPrice) return;
+    const mid = parseFloat(currentPrice);
+    if (!Number.isFinite(mid) || mid <= 0) return;
+    midRef.current = mid;
+    setBook((prev) => prev ?? genOrderBook(mid));
+  }, [currentPrice, symbol]);
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      const mid = midRef.current;
+      if (mid == null) return;
+      setBook(genOrderBook(mid));
+    }, 3000);
+    return () => clearInterval(id);
+  }, []);
+
   if (!book) return null;
   const maxCum = Math.max(book.asks[0]?.cum || 0, book.bids[book.bids.length - 1]?.cum || 0) || 1;
-  const last = pair.price;
-  const lastUp = pair.chg >= 0;
 
   function Row({ row, side }: { row: OrderBookLevel; side: 'ask' | 'bid' }) {
     const pct = (row.cum / maxCum) * 100;
     return (
       <div
         className="ob-row"
-        onClick={() => onPriceClick && onPriceClick(row.price)}
+        onClick={() => onPriceClick && onPriceClick(String(row.price))}
         style={{
           display: 'grid',
           gridTemplateColumns: '1fr 1fr 1fr',
@@ -100,8 +132,8 @@ export function OrderBook({ book, pair, onPriceClick }: OrderBookProps) {
           letterSpacing: '.04em',
         }}
       >
-        <span>Price ({pair.quote})</span>
-        <span style={{ textAlign: 'right' }}>Size ({pair.base})</span>
+        <span>Price ({quoteAsset})</span>
+        <span style={{ textAlign: 'right' }}>Size ({baseAsset})</span>
         <span style={{ textAlign: 'right' }}>Sum</span>
       </div>
 
@@ -132,13 +164,13 @@ export function OrderBook({ book, pair, onPriceClick }: OrderBookProps) {
         }}
       >
         <span
-          className={'mono ' + (lastUp ? 'up' : 'down')}
-          style={{ fontSize: 16, fontWeight: 600 }}
+          className="mono"
+          style={{ fontSize: 16, fontWeight: 600, color: 'var(--text-0)' }}
         >
-          {formatPrice(last)}
+          {formatPrice(currentPrice ?? '')}
         </span>
         <span style={{ color: 'var(--text-2)', fontSize: 11 }} className="mono">
-          ≈ ${formatPrice(last)}
+          ≈ ${formatPrice(currentPrice ?? '')}
         </span>
       </div>
 

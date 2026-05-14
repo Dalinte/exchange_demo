@@ -1,71 +1,79 @@
 'use client';
 
 import { type ReactNode, useEffect, useState } from 'react';
+import { useBalances } from '@/shared/api/hooks/use-balances';
+import { useTickers } from '@/shared/api/hooks/use-tickers';
+import { useTradingPairs } from '@/shared/api/hooks/use-trading-pairs';
+import { Decimal, toFixedDown } from '@/shared/lib/decimal';
 import { formatDecimal, formatPrice } from '@/shared/lib/format';
-import type { MockPair, SubmittedOrder } from '@/features/trade-terminal/types';
+import { useMarketStore } from '@/shared/stores/market-store';
 
-type OrderSide = 'buy' | 'sell';
-type OrderType = 'limit' | 'market';
-type Balances = Record<string, number>;
+type OrderSide = 'BUY' | 'SELL';
+type OrderType = 'LIMIT' | 'MARKET';
 
 interface OrderFormProps {
-  pair: MockPair;
-  balances: Balances;
-  onSubmit: (order: SubmittedOrder) => void;
-  presetPrice: number | null;
+  presetPrice: string | null;
   onPresetConsumed: () => void;
 }
 
-export function OrderForm({
-  pair,
-  balances,
-  onSubmit,
-  presetPrice,
-  onPresetConsumed,
-}: OrderFormProps) {
-  const [side, setSide] = useState<OrderSide>('buy');
-  const [type, setType] = useState<OrderType>('limit');
-  const [price, setPrice] = useState<number | string>(pair.price);
+export function OrderForm({ presetPrice, onPresetConsumed }: OrderFormProps) {
+  const symbol = useMarketStore((s) => s.symbol);
+  const { data: tickers } = useTickers();
+  const { data: balances } = useBalances();
+  const { data: pairs } = useTradingPairs();
+
+  const ticker = tickers?.find((t) => t.symbol === symbol);
+  const pair = pairs?.find((p) => p.symbol === symbol);
+  const baseAsset = ticker?.baseAsset ?? '';
+  const quoteAsset = ticker?.quoteAsset ?? 'USDT';
+  const currentPrice = ticker?.lastPrice ?? '0';
+  const availQuote = balances?.[quoteAsset]?.free ?? '0';
+  const availBase = baseAsset ? (balances?.[baseAsset]?.free ?? '0') : '0';
+  const qtyPrecision = pair?.quantityPrecision ?? 6;
+  const pricePrecision = pair?.pricePrecision ?? 2;
+
+  const [side, setSide] = useState<OrderSide>('BUY');
+  const [type, setType] = useState<OrderType>('LIMIT');
+  const [price, setPrice] = useState<string>(currentPrice);
   const [amount, setAmount] = useState('');
   const [pct, setPct] = useState(0);
 
   useEffect(() => {
-    setPrice(pair.price);
+    setPrice(currentPrice);
     setAmount('');
     setPct(0);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pair.sym]);
+  }, [symbol]);
 
   useEffect(() => {
     if (presetPrice != null) {
-      setType('limit');
+      setType('LIMIT');
       setPrice(presetPrice);
       onPresetConsumed();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [presetPrice]);
 
-  const effectivePrice = type === 'market' ? pair.price : Number(price) || 0;
-  const amountNum = Number(amount) || 0;
-  const total = effectivePrice * amountNum;
+  const effectivePrice = type === 'MARKET' ? currentPrice : price || '0';
+  const priceD = safeDecimal(effectivePrice);
+  const amountD = safeDecimal(amount);
+  const totalD = amountD.mul(priceD);
 
-  const availUSDT = balances.USDT || 0;
-  const availBase = balances[pair.base] || 0;
-  const availLabel =
-    side === 'buy'
-      ? `${formatDecimal(availUSDT, 4)} USDT`
-      : `${formatDecimal(availBase, 6)} ${pair.base}`;
+  const tooMuch =
+    side === 'BUY' ? totalD.gt(safeDecimal(availQuote)) : amountD.gt(safeDecimal(availBase));
+  const disabled = amountD.lte(0) || tooMuch || !ticker;
 
-  function applyPct(p: number) {
-    setPct(p);
-    if (side === 'buy') {
-      const usdtToSpend = availUSDT * (p / 100);
-      const newAmount = effectivePrice > 0 ? usdtToSpend / effectivePrice : 0;
-      setAmount(newAmount.toFixed(6));
+  function applyPct(percent: number) {
+    setPct(percent);
+    const p = new Decimal(percent).div(100);
+    let newAmount: Decimal;
+    if (side === 'BUY') {
+      const divisor = priceD.gt(0) ? priceD : new Decimal(1);
+      newAmount = safeDecimal(availQuote).mul(p).div(divisor);
     } else {
-      const newAmount = availBase * (p / 100);
-      setAmount(newAmount.toFixed(6));
+      newAmount = safeDecimal(availBase).mul(p);
     }
+    setAmount(toFixedDown(newAmount, qtyPrecision));
   }
 
   function handleAmount(v: string) {
@@ -73,25 +81,29 @@ export function OrderForm({
     setPct(0);
   }
 
-  const tooLittle = amountNum <= 0;
-  const tooMuch = side === 'buy' ? total > availUSDT + 1e-9 : amountNum > availBase + 1e-9;
-  const disabled = tooLittle || tooMuch;
+  function handleTotal(v: string) {
+    setPct(0);
+    if (!priceD.gt(0)) {
+      setAmount('');
+      return;
+    }
+    const t = safeDecimal(v);
+    setAmount(toFixedDown(t.div(priceD), qtyPrecision));
+  }
 
   function submit() {
     if (disabled) return;
-    onSubmit({
-      side,
-      type,
-      price: effectivePrice,
-      amount: amountNum,
-      total,
-      pair,
-      ts: Date.now(),
-    });
+    console.warn('Order submit coming in 5F');
     setAmount('');
     setPct(0);
   }
 
+  const availLabel =
+    side === 'BUY'
+      ? `${formatDecimal(availQuote, 4)} ${quoteAsset}`
+      : `${formatDecimal(availBase, 6)} ${baseAsset || ''}`.trim();
+
+  const totalDisplay = totalD.gt(0) ? totalD.toFixed(pricePrecision) : '';
   const stops = [0, 25, 50, 75, 100];
 
   return (
@@ -110,21 +122,21 @@ export function OrderForm({
     >
       <div className="side-toggle">
         <button
-          className={'buy' + (side === 'buy' ? ' active' : '')}
-          onClick={() => setSide('buy')}
+          className={'buy' + (side === 'BUY' ? ' active' : '')}
+          onClick={() => setSide('BUY')}
         >
           Buy
         </button>
         <button
-          className={'sell' + (side === 'sell' ? ' active' : '')}
-          onClick={() => setSide('sell')}
+          className={'sell' + (side === 'SELL' ? ' active' : '')}
+          onClick={() => setSide('SELL')}
         >
           Sell
         </button>
       </div>
 
       <div style={{ display: 'flex', gap: 0, borderBottom: '1px solid var(--border)' }}>
-        {(['limit', 'market'] as const).map((t) => (
+        {(['LIMIT', 'MARKET'] as const).map((t) => (
           <button
             key={t}
             onClick={() => setType(t)}
@@ -140,7 +152,7 @@ export function OrderForm({
               textTransform: 'capitalize',
             }}
           >
-            {t}
+            {t.toLowerCase()}
           </button>
         ))}
       </div>
@@ -159,13 +171,13 @@ export function OrderForm({
         </span>
       </div>
 
-      {type === 'limit' && (
+      {type === 'LIMIT' && (
         <FormRow label="Price">
-          <FieldNum value={String(price)} onChange={(v) => setPrice(v)} unit={pair.quote} />
+          <FieldNum value={price} onChange={setPrice} unit={quoteAsset} />
         </FormRow>
       )}
 
-      {type === 'market' && (
+      {type === 'MARKET' && (
         <div
           style={{
             padding: '8px 10px',
@@ -179,13 +191,13 @@ export function OrderForm({
         >
           Will execute at market price{' '}
           <span className="mono" style={{ color: 'var(--text-0)' }}>
-            ~ {formatPrice(pair.price)} {pair.quote}
+            ~ {formatPrice(currentPrice)} {quoteAsset}
           </span>
         </div>
       )}
 
       <FormRow label="Amount">
-        <FieldNum value={amount} onChange={handleAmount} unit={pair.base} placeholder="0.00" />
+        <FieldNum value={amount} onChange={handleAmount} unit={baseAsset} placeholder="0.00" />
       </FormRow>
 
       <div className="pct-track">
@@ -209,30 +221,26 @@ export function OrderForm({
 
       <FormRow label="Total">
         <FieldNum
-          value={total > 0 ? total.toFixed(2) : ''}
-          onChange={(v) => {
-            const t = Number(v) || 0;
-            if (effectivePrice > 0) setAmount((t / effectivePrice).toFixed(6));
-            setPct(0);
-          }}
-          unit={pair.quote}
+          value={totalDisplay}
+          onChange={handleTotal}
+          unit={quoteAsset}
           placeholder="0.00"
         />
       </FormRow>
 
       {tooMuch && (
         <div style={{ fontSize: 11, color: 'var(--down)' }}>
-          Insufficient {side === 'buy' ? 'USDT' : pair.base} balance
+          Insufficient {side === 'BUY' ? quoteAsset : baseAsset} balance
         </div>
       )}
 
       <button
-        className={'action-btn ' + side}
+        className={'action-btn ' + side.toLowerCase()}
         onClick={submit}
         disabled={disabled}
         style={{ opacity: disabled ? 0.45 : 1 }}
       >
-        {side === 'buy' ? 'Buy' : 'Sell'} {pair.base}
+        {side === 'BUY' ? 'Buy' : 'Sell'} {baseAsset}
       </button>
 
       <div
@@ -249,16 +257,25 @@ export function OrderForm({
         }}
       >
         <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-          <span style={{ color: 'var(--text-2)' }}>USDT</span>
-          <span className="mono">{formatDecimal(availUSDT, 2)}</span>
+          <span style={{ color: 'var(--text-2)' }}>{quoteAsset}</span>
+          <span className="mono">{formatDecimal(availQuote, 2)}</span>
         </div>
         <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-          <span style={{ color: 'var(--text-2)' }}>{pair.base}</span>
+          <span style={{ color: 'var(--text-2)' }}>{baseAsset || '—'}</span>
           <span className="mono">{formatDecimal(availBase, 6)}</span>
         </div>
       </div>
     </div>
   );
+}
+
+function safeDecimal(value: string): Decimal {
+  if (!value) return new Decimal(0);
+  try {
+    return new Decimal(value);
+  } catch {
+    return new Decimal(0);
+  }
 }
 
 interface FormRowProps {

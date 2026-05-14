@@ -25,24 +25,3 @@ export interface Toast {
   sub?: string;
   kind?: ToastKind;
 }
-
-export interface MockPair {
-  sym: string;
-  base: string;
-  quote: string;
-  price: number;
-  chg: number;
-  vol: string;
-  high: number;
-  low: number;
-}
-
-export interface SubmittedOrder {
-  side: 'buy' | 'sell';
-  type: 'limit' | 'market';
-  price: number;
-  amount: number;
-  total: number;
-  pair: MockPair;
-  ts: number;
-}
