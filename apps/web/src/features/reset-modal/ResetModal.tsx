@@ -1,11 +1,17 @@
 'use client';
 
+import { useResetAccount } from '@/shared/api/hooks/mutations/use-reset-account';
+import { parseApiError } from '@/shared/lib/api-error';
+import { usePushToast } from '@/shared/stores/toast-store';
+
 interface ResetModalProps {
-  onConfirm: () => void;
   onClose: () => void;
 }
 
-export function ResetModal({ onConfirm, onClose }: ResetModalProps) {
+export function ResetModal({ onClose }: ResetModalProps) {
+  const resetAccount = useResetAccount();
+  const pushToast = usePushToast();
+
   return (
     <div className="modal-backdrop" onClick={onClose}>
       <div className="modal" onClick={(e) => e.stopPropagation()}>
@@ -37,15 +43,29 @@ export function ResetModal({ onConfirm, onClose }: ResetModalProps) {
           . This action cannot be undone.
         </div>
         <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-          <button className="btn btn-ghost" onClick={onClose}>
+          <button className="btn btn-ghost" onClick={onClose} disabled={resetAccount.isPending}>
             Cancel
           </button>
           <button
             className="btn"
-            onClick={onConfirm}
-            style={{ background: 'var(--down)', borderColor: 'var(--down)', color: '#fff' }}
+            onClick={() =>
+              resetAccount.mutate(undefined, {
+                onSuccess: () => {
+                  pushToast({ title: 'Account reset to starting balance' });
+                  onClose();
+                },
+                onError: (error) => pushToast({ title: parseApiError(error), kind: 'error' }),
+              })
+            }
+            disabled={resetAccount.isPending}
+            style={{
+              background: 'var(--down)',
+              borderColor: 'var(--down)',
+              color: '#fff',
+              opacity: resetAccount.isPending ? 0.6 : 1,
+            }}
           >
-            Reset Account
+            {resetAccount.isPending ? 'Resetting…' : 'Reset Account'}
           </button>
         </div>
       </div>

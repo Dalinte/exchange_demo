@@ -1,20 +1,31 @@
 'use client';
 
+import { zodResolver } from '@hookform/resolvers/zod';
 import { type ReactNode, useEffect, useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
+import { useCreateOrder } from '@/shared/api/hooks/mutations/use-create-order';
 import { useBalances } from '@/shared/api/hooks/use-balances';
 import { useTickers } from '@/shared/api/hooks/use-tickers';
 import { useTradingPairs } from '@/shared/api/hooks/use-trading-pairs';
+import { parseApiError } from '@/shared/lib/api-error';
 import { Decimal, toFixedDown } from '@/shared/lib/decimal';
 import { formatDecimal, formatPrice } from '@/shared/lib/format';
 import { useMarketStore } from '@/shared/stores/market-store';
-
-type OrderSide = 'BUY' | 'SELL';
-type OrderType = 'LIMIT' | 'MARKET';
+import { usePushToast } from '@/shared/stores/toast-store';
 
 interface OrderFormProps {
   presetPrice: string | null;
   onPresetConsumed: () => void;
 }
+
+const formSchema = z.object({
+  side: z.enum(['BUY', 'SELL']),
+  type: z.enum(['MARKET', 'LIMIT']),
+  quantity: z.string().min(1, 'Enter amount'),
+  price: z.string().optional(),
+});
+type FormValues = z.infer<typeof formSchema>;
 
 export function OrderForm({ presetPrice, onPresetConsumed }: OrderFormProps) {
   const symbol = useMarketStore((s) => s.symbol);
@@ -27,83 +38,115 @@ export function OrderForm({ presetPrice, onPresetConsumed }: OrderFormProps) {
   const baseAsset = ticker?.baseAsset ?? '';
   const quoteAsset = ticker?.quoteAsset ?? 'USDT';
   const currentPrice = ticker?.lastPrice ?? '0';
-  const availQuote = balances?.[quoteAsset]?.free ?? '0';
-  const availBase = baseAsset ? (balances?.[baseAsset]?.free ?? '0') : '0';
-  const qtyPrecision = pair?.quantityPrecision ?? 6;
+  const availableQuote = balances?.[quoteAsset]?.free ?? '0';
+  const availableBase = baseAsset ? (balances?.[baseAsset]?.free ?? '0') : '0';
+  const quantityPrecision = pair?.quantityPrecision ?? 6;
   const pricePrecision = pair?.pricePrecision ?? 2;
 
-  const [side, setSide] = useState<OrderSide>('BUY');
-  const [type, setType] = useState<OrderType>('LIMIT');
-  const [price, setPrice] = useState<string>(currentPrice);
-  const [amount, setAmount] = useState('');
-  const [pct, setPct] = useState(0);
+  const { watch, setValue, handleSubmit, reset } = useForm<FormValues>({
+    resolver: zodResolver(formSchema),
+    defaultValues: { side: 'BUY', type: 'LIMIT', quantity: '', price: currentPrice },
+    mode: 'onChange',
+  });
+
+  const side = watch('side');
+  const type = watch('type');
+  const quantity = watch('quantity');
+  const price = watch('price') ?? '';
+
+  const [percent, setPercent] = useState(0);
+
+  const createOrder = useCreateOrder();
+  const pushToast = usePushToast();
 
   useEffect(() => {
-    setPrice(currentPrice);
-    setAmount('');
-    setPct(0);
+    reset({ side, type, quantity: '', price: currentPrice });
+    setPercent(0);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [symbol]);
 
   useEffect(() => {
     if (presetPrice != null) {
-      setType('LIMIT');
-      setPrice(presetPrice);
+      setValue('type', 'LIMIT');
+      setValue('price', presetPrice);
       onPresetConsumed();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [presetPrice]);
 
   const effectivePrice = type === 'MARKET' ? currentPrice : price || '0';
-  const priceD = safeDecimal(effectivePrice);
-  const amountD = safeDecimal(amount);
-  const totalD = amountD.mul(priceD);
+  const priceDecimal = safeDecimal(effectivePrice);
+  const amountDecimal = safeDecimal(quantity);
+  const totalDecimal = amountDecimal.mul(priceDecimal);
 
   const tooMuch =
-    side === 'BUY' ? totalD.gt(safeDecimal(availQuote)) : amountD.gt(safeDecimal(availBase));
-  const disabled = amountD.lte(0) || tooMuch || !ticker;
+    side === 'BUY'
+      ? totalDecimal.gt(safeDecimal(availableQuote))
+      : amountDecimal.gt(safeDecimal(availableBase));
+  const disabled = createOrder.isPending || amountDecimal.lte(0) || tooMuch || !ticker;
 
-  function applyPct(percent: number) {
-    setPct(percent);
-    const p = new Decimal(percent).div(100);
+  function applyPercent(nextPercent: number) {
+    setPercent(nextPercent);
+    const fraction = new Decimal(nextPercent).div(100);
     let newAmount: Decimal;
     if (side === 'BUY') {
-      const divisor = priceD.gt(0) ? priceD : new Decimal(1);
-      newAmount = safeDecimal(availQuote).mul(p).div(divisor);
+      const divisor = priceDecimal.gt(0) ? priceDecimal : new Decimal(1);
+      newAmount = safeDecimal(availableQuote).mul(fraction).div(divisor);
     } else {
-      newAmount = safeDecimal(availBase).mul(p);
+      newAmount = safeDecimal(availableBase).mul(fraction);
     }
-    setAmount(toFixedDown(newAmount, qtyPrecision));
+    setValue('quantity', toFixedDown(newAmount, quantityPrecision), { shouldValidate: true });
   }
 
-  function handleAmount(v: string) {
-    setAmount(v);
-    setPct(0);
+  function handleAmount(value: string) {
+    setValue('quantity', value, { shouldValidate: true });
+    setPercent(0);
   }
 
-  function handleTotal(v: string) {
-    setPct(0);
-    if (!priceD.gt(0)) {
-      setAmount('');
+  function handleTotal(value: string) {
+    setPercent(0);
+    if (!priceDecimal.gt(0)) {
+      setValue('quantity', '', { shouldValidate: true });
       return;
     }
-    const t = safeDecimal(v);
-    setAmount(toFixedDown(t.div(priceD), qtyPrecision));
+    const totalInput = safeDecimal(value);
+    setValue('quantity', toFixedDown(totalInput.div(priceDecimal), quantityPrecision), {
+      shouldValidate: true,
+    });
   }
 
-  function submit() {
-    if (disabled) return;
-    console.warn('Order submit coming in 5F');
-    setAmount('');
-    setPct(0);
-  }
+  const onSubmit = handleSubmit((values) => {
+    if (values.type === 'LIMIT') {
+      pushToast({ title: 'Limit orders are not implemented yet', kind: 'error' });
+      return;
+    }
+    createOrder.mutate(
+      { type: 'MARKET', symbol, side: values.side, quantity: values.quantity },
+      {
+        onSuccess: (order) => {
+          const verb = values.side === 'BUY' ? 'Bought' : 'Sold';
+          const fillPrice = order.averageFillPrice ?? ticker?.lastPrice ?? '0';
+          pushToast({
+            title: `${verb} ${formatDecimal(order.filledQuantity, quantityPrecision)} ${baseAsset}`,
+            sub: `at ~${formatPrice(fillPrice)} ${quoteAsset}`,
+            kind: values.side === 'BUY' ? '' : 'sell',
+          });
+          reset({ side: values.side, type: 'MARKET', quantity: '', price: currentPrice });
+          setPercent(0);
+        },
+        onError: (error) => {
+          pushToast({ title: parseApiError(error), kind: 'error' });
+        },
+      },
+    );
+  });
 
-  const availLabel =
+  const availableLabel =
     side === 'BUY'
-      ? `${formatDecimal(availQuote, 4)} ${quoteAsset}`
-      : `${formatDecimal(availBase, 6)} ${baseAsset || ''}`.trim();
+      ? `${formatDecimal(availableQuote, 4)} ${quoteAsset}`
+      : `${formatDecimal(availableBase, 6)} ${baseAsset || ''}`.trim();
 
-  const totalDisplay = totalD.gt(0) ? totalD.toFixed(pricePrecision) : '';
+  const totalDisplay = totalDecimal.gt(0) ? totalDecimal.toFixed(pricePrecision) : '';
   const stops = [0, 25, 50, 75, 100];
 
   return (
@@ -123,13 +166,13 @@ export function OrderForm({ presetPrice, onPresetConsumed }: OrderFormProps) {
       <div className="side-toggle">
         <button
           className={'buy' + (side === 'BUY' ? ' active' : '')}
-          onClick={() => setSide('BUY')}
+          onClick={() => setValue('side', 'BUY', { shouldValidate: true })}
         >
           Buy
         </button>
         <button
           className={'sell' + (side === 'SELL' ? ' active' : '')}
-          onClick={() => setSide('SELL')}
+          onClick={() => setValue('side', 'SELL', { shouldValidate: true })}
         >
           Sell
         </button>
@@ -139,7 +182,7 @@ export function OrderForm({ presetPrice, onPresetConsumed }: OrderFormProps) {
         {(['LIMIT', 'MARKET'] as const).map((t) => (
           <button
             key={t}
-            onClick={() => setType(t)}
+            onClick={() => setValue('type', t)}
             style={{
               background: 'transparent',
               border: 0,
@@ -167,13 +210,17 @@ export function OrderForm({ presetPrice, onPresetConsumed }: OrderFormProps) {
       >
         <span style={{ color: 'var(--text-2)' }}>Available</span>
         <span className="mono" style={{ color: 'var(--text-1)' }}>
-          {availLabel}
+          {availableLabel}
         </span>
       </div>
 
       {type === 'LIMIT' && (
         <FormRow label="Price">
-          <FieldNum value={price} onChange={setPrice} unit={quoteAsset} />
+          <FieldNum
+            value={price}
+            onChange={(v) => setValue('price', v)}
+            unit={quoteAsset}
+          />
         </FormRow>
       )}
 
@@ -197,24 +244,29 @@ export function OrderForm({ presetPrice, onPresetConsumed }: OrderFormProps) {
       )}
 
       <FormRow label="Amount">
-        <FieldNum value={amount} onChange={handleAmount} unit={baseAsset} placeholder="0.00" />
+        <FieldNum value={quantity} onChange={handleAmount} unit={baseAsset} placeholder="0.00" />
       </FormRow>
 
       <div className="pct-track">
-        <div className="pct-fill" style={{ width: pct + '%' }} />
-        {stops.map((s) => (
+        <div className="pct-fill" style={{ width: percent + '%' }} />
+        {stops.map((stop) => (
           <div
-            key={s}
+            key={stop}
             className="pct-stop"
-            style={{ left: s + '%' }}
-            data-tip={s + '%'}
-            onClick={() => applyPct(s)}
+            style={{ left: stop + '%' }}
+            data-tip={stop + '%'}
+            onClick={() => applyPercent(stop)}
           />
         ))}
-        {pct > 0 && <div className="pct-dot" style={{ left: pct + '%' }} />}
-        {stops.map((s) => (
-          <div key={s} className="pct-label" style={{ left: s + '%' }} onClick={() => applyPct(s)}>
-            {s}%
+        {percent > 0 && <div className="pct-dot" style={{ left: percent + '%' }} />}
+        {stops.map((stop) => (
+          <div
+            key={stop}
+            className="pct-label"
+            style={{ left: stop + '%' }}
+            onClick={() => applyPercent(stop)}
+          >
+            {stop}%
           </div>
         ))}
       </div>
@@ -236,11 +288,11 @@ export function OrderForm({ presetPrice, onPresetConsumed }: OrderFormProps) {
 
       <button
         className={'action-btn ' + side.toLowerCase()}
-        onClick={submit}
+        onClick={onSubmit}
         disabled={disabled}
         style={{ opacity: disabled ? 0.45 : 1 }}
       >
-        {side === 'BUY' ? 'Buy' : 'Sell'} {baseAsset}
+        {createOrder.isPending ? 'Placing…' : `${side === 'BUY' ? 'Buy' : 'Sell'} ${baseAsset}`}
       </button>
 
       <div
@@ -258,11 +310,11 @@ export function OrderForm({ presetPrice, onPresetConsumed }: OrderFormProps) {
       >
         <div style={{ display: 'flex', justifyContent: 'space-between' }}>
           <span style={{ color: 'var(--text-2)' }}>{quoteAsset}</span>
-          <span className="mono">{formatDecimal(availQuote, 2)}</span>
+          <span className="mono">{formatDecimal(availableQuote, 2)}</span>
         </div>
         <div style={{ display: 'flex', justifyContent: 'space-between' }}>
           <span style={{ color: 'var(--text-2)' }}>{baseAsset || '—'}</span>
-          <span className="mono">{formatDecimal(availBase, 6)}</span>
+          <span className="mono">{formatDecimal(availableBase, 6)}</span>
         </div>
       </div>
     </div>

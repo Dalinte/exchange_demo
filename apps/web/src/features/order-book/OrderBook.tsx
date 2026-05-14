@@ -32,7 +32,7 @@ export function OrderBook({ onPriceClick }: OrderBookProps) {
     const mid = parseFloat(currentPrice);
     if (!Number.isFinite(mid) || mid <= 0) return;
     midRef.current = mid;
-    setBook((prev) => prev ?? genOrderBook(mid));
+    setBook((previous) => previous ?? genOrderBook(mid));
   }, [currentPrice, symbol]);
 
   useEffect(() => {
@@ -48,7 +48,7 @@ export function OrderBook({ onPriceClick }: OrderBookProps) {
   const maxCum = Math.max(book.asks[0]?.cum || 0, book.bids[book.bids.length - 1]?.cum || 0) || 1;
 
   function Row({ row, side }: { row: OrderBookLevel; side: 'ask' | 'bid' }) {
-    const pct = (row.cum / maxCum) * 100;
+    const percent = (row.cum / maxCum) * 100;
     return (
       <div
         className="ob-row"
@@ -72,7 +72,7 @@ export function OrderBook({ onPriceClick }: OrderBookProps) {
             right: 0,
             top: 0,
             bottom: 0,
-            width: pct + '%',
+            width: percent + '%',
             background: side === 'ask' ? 'var(--down-bg)' : 'var(--up-bg)',
             pointerEvents: 'none',
           }}

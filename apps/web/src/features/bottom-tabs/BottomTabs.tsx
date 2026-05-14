@@ -2,11 +2,14 @@
 
 import { useState } from 'react';
 import type { BalanceMap, OrderView, TradeView, TradingPairWithStats } from '@exchange/shared';
+import { useCancelOrder } from '@/shared/api/hooks/mutations/use-cancel-order';
 import { useBalances } from '@/shared/api/hooks/use-balances';
 import { useOpenOrders, useOrderHistory } from '@/shared/api/hooks/use-orders';
 import { useTickers } from '@/shared/api/hooks/use-tickers';
 import { useTradeHistory } from '@/shared/api/hooks/use-trades';
+import { parseApiError } from '@/shared/lib/api-error';
 import { formatDecimal, formatPrice, formatTime } from '@/shared/lib/format';
+import { usePushToast } from '@/shared/stores/toast-store';
 
 type TabId = 'open' | 'history' | 'trades' | 'balances';
 
@@ -84,6 +87,9 @@ function OpenOrders({
   orders: OrderView[];
   tickers: TradingPairWithStats[] | undefined;
 }) {
+  const cancelOrder = useCancelOrder();
+  const pushToast = usePushToast();
+
   if (!orders.length) return <div className="empty">No open orders</div>;
   return (
     <table className="tbl">
@@ -101,38 +107,46 @@ function OpenOrders({
         </tr>
       </thead>
       <tbody>
-        {orders.map((o) => (
-          <tr key={o.id}>
-            <td className="mono" style={{ color: 'var(--text-2)' }}>
-              {formatTime(o.createdAt)}
-            </td>
-            <td>{displaySymbol(o.symbol, tickers)}</td>
-            <td style={{ textTransform: 'capitalize' }}>{o.type.toLowerCase()}</td>
-            <td
-              className={o.side === 'BUY' ? 'up' : 'down'}
-              style={{ textTransform: 'capitalize', fontWeight: 500 }}
-            >
-              {o.side.toLowerCase()}
-            </td>
-            <td className="mono right">{o.price ? formatPrice(o.price) : '—'}</td>
-            <td className="mono right">{formatDecimal(o.quantity, 6)}</td>
-            <td className="mono right" style={{ color: 'var(--text-2)' }}>
-              {formatDecimal(o.filledQuantity, 6)}
-            </td>
-            <td className="mono right">{formatDecimal(o.total, 2)}</td>
-            <td className="right">
-              <button
-                className="btn btn-ghost"
-                style={{ height: 24, padding: '0 8px', fontSize: 11 }}
-                onClick={() => {
-                  /* Промт 5F */
-                }}
+        {orders.map((order) => {
+          const isCancelling = cancelOrder.isPending && cancelOrder.variables === order.id;
+          return (
+            <tr key={order.id}>
+              <td className="mono" style={{ color: 'var(--text-2)' }}>
+                {formatTime(order.createdAt)}
+              </td>
+              <td>{displaySymbol(order.symbol, tickers)}</td>
+              <td style={{ textTransform: 'capitalize' }}>{order.type.toLowerCase()}</td>
+              <td
+                className={order.side === 'BUY' ? 'up' : 'down'}
+                style={{ textTransform: 'capitalize', fontWeight: 500 }}
               >
-                Cancel
-              </button>
-            </td>
-          </tr>
-        ))}
+                {order.side.toLowerCase()}
+              </td>
+              <td className="mono right">{order.price ? formatPrice(order.price) : '—'}</td>
+              <td className="mono right">{formatDecimal(order.quantity, 6)}</td>
+              <td className="mono right" style={{ color: 'var(--text-2)' }}>
+                {formatDecimal(order.filledQuantity, 6)}
+              </td>
+              <td className="mono right">{formatDecimal(order.total, 2)}</td>
+              <td className="right">
+                <button
+                  className="btn btn-ghost"
+                  style={{ height: 24, padding: '0 8px', fontSize: 11 }}
+                  disabled={isCancelling}
+                  onClick={() =>
+                    cancelOrder.mutate(order.id, {
+                      onSuccess: () => pushToast({ title: 'Order cancelled' }),
+                      onError: (error) =>
+                        pushToast({ title: parseApiError(error), kind: 'error' }),
+                    })
+                  }
+                >
+                  Cancel
+                </button>
+              </td>
+            </tr>
+          );
+        })}
       </tbody>
     </table>
   );
@@ -161,24 +175,24 @@ function OrderHistory({
         </tr>
       </thead>
       <tbody>
-        {orders.map((o) => {
-          const isFilled = o.status === 'FILLED';
+        {orders.map((order) => {
+          const isFilled = order.status === 'FILLED';
           return (
-            <tr key={o.id}>
+            <tr key={order.id}>
               <td className="mono" style={{ color: 'var(--text-2)' }}>
-                {formatTime(o.createdAt)}
+                {formatTime(order.createdAt)}
               </td>
-              <td>{displaySymbol(o.symbol, tickers)}</td>
-              <td style={{ textTransform: 'capitalize' }}>{o.type.toLowerCase()}</td>
+              <td>{displaySymbol(order.symbol, tickers)}</td>
+              <td style={{ textTransform: 'capitalize' }}>{order.type.toLowerCase()}</td>
               <td
-                className={o.side === 'BUY' ? 'up' : 'down'}
+                className={order.side === 'BUY' ? 'up' : 'down'}
                 style={{ textTransform: 'capitalize', fontWeight: 500 }}
               >
-                {o.side.toLowerCase()}
+                {order.side.toLowerCase()}
               </td>
-              <td className="mono right">{o.price ? formatPrice(o.price) : '—'}</td>
-              <td className="mono right">{formatDecimal(o.quantity, 6)}</td>
-              <td className="mono right">{formatDecimal(o.total, 2)}</td>
+              <td className="mono right">{order.price ? formatPrice(order.price) : '—'}</td>
+              <td className="mono right">{formatDecimal(order.quantity, 6)}</td>
+              <td className="mono right">{formatDecimal(order.total, 2)}</td>
               <td>
                 <span
                   style={{

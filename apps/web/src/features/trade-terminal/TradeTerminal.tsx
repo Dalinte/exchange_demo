@@ -58,13 +58,8 @@ export function TradeTerminal({ initialSymbol }: TradeTerminalProps) {
         <OrderForm presetPrice={presetPrice} onPresetConsumed={() => setPresetPrice(null)} />
       </div>
 
-      {resetOpen && (
-        <ResetModal
-          onConfirm={() => setResetOpen(false)}
-          onClose={() => setResetOpen(false)}
-        />
-      )}
-      <Toasts toasts={[]} />
+      {resetOpen && <ResetModal onClose={() => setResetOpen(false)} />}
+      <Toasts />
 
       <StatusFooter />
     </div>

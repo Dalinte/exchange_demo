@@ -1,12 +1,9 @@
 'use client';
 
-import type { Toast } from '@/features/trade-terminal/types';
+import { useToastStore } from '@/shared/stores/toast-store';
 
-interface ToastsProps {
-  toasts: Toast[];
-}
-
-export function Toasts({ toasts }: ToastsProps) {
+export function Toasts() {
+  const toasts = useToastStore((s) => s.toasts);
   return (
     <div className="toast-stack">
       {toasts.map((t) => (
