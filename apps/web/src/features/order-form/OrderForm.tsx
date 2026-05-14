@@ -1,17 +1,15 @@
 'use client';
 
 import { type ReactNode, useEffect, useState } from 'react';
-import { fmt, fmtPrice } from '@/features/trade-terminal/format';
-import type {
-  Balances,
-  OrderSide,
-  OrderType,
-  Pair,
-  SubmittedOrder,
-} from '@/features/trade-terminal/types';
+import { formatDecimal, formatPrice } from '@/shared/lib/format';
+import type { MockPair, SubmittedOrder } from '@/features/trade-terminal/types';
+
+type OrderSide = 'buy' | 'sell';
+type OrderType = 'limit' | 'market';
+type Balances = Record<string, number>;
 
 interface OrderFormProps {
-  pair: Pair;
+  pair: MockPair;
   balances: Balances;
   onSubmit: (order: SubmittedOrder) => void;
   presetPrice: number | null;
@@ -54,7 +52,7 @@ export function OrderForm({
   const availUSDT = balances.USDT || 0;
   const availBase = balances[pair.base] || 0;
   const availLabel =
-    side === 'buy' ? `${fmt(availUSDT, 4)} USDT` : `${fmt(availBase, 6)} ${pair.base}`;
+    side === 'buy' ? `${formatDecimal(availUSDT, 4)} USDT` : `${formatDecimal(availBase, 6)} ${pair.base}`;
 
   function applyPct(p: number) {
     setPct(p);
@@ -179,7 +177,7 @@ export function OrderForm({
         >
           Will execute at market price{' '}
           <span className="mono" style={{ color: 'var(--text-0)' }}>
-            ~ {fmtPrice(pair.price)} {pair.quote}
+            ~ {formatPrice(pair.price)} {pair.quote}
           </span>
         </div>
       )}
@@ -250,11 +248,11 @@ export function OrderForm({
       >
         <div style={{ display: 'flex', justifyContent: 'space-between' }}>
           <span style={{ color: 'var(--text-2)' }}>USDT</span>
-          <span className="mono">{fmt(availUSDT, 2)}</span>
+          <span className="mono">{formatDecimal(availUSDT, 2)}</span>
         </div>
         <div style={{ display: 'flex', justifyContent: 'space-between' }}>
           <span style={{ color: 'var(--text-2)' }}>{pair.base}</span>
-          <span className="mono">{fmt(availBase, 6)}</span>
+          <span className="mono">{formatDecimal(availBase, 6)}</span>
         </div>
       </div>
     </div>

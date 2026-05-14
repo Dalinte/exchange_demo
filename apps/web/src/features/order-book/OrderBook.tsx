@@ -1,11 +1,15 @@
 'use client';
 
-import { fmtPrice } from '@/features/trade-terminal/format';
-import type { OrderBookLevel, OrderBookSnapshot, Pair } from '@/features/trade-terminal/types';
+import { formatPrice } from '@/shared/lib/format';
+import type {
+  MockPair,
+  OrderBookLevel,
+  OrderBookSnapshot,
+} from '@/features/trade-terminal/types';
 
 interface OrderBookProps {
   book: OrderBookSnapshot | null;
-  pair: Pair;
+  pair: MockPair;
   onPriceClick?: (price: number) => void;
 }
 
@@ -46,7 +50,7 @@ export function OrderBook({ book, pair, onPriceClick }: OrderBookProps) {
           }}
         />
         <span style={{ position: 'relative', color: side === 'ask' ? 'var(--down)' : 'var(--up)' }}>
-          {fmtPrice(row.price)}
+          {formatPrice(row.price)}
         </span>
         <span style={{ position: 'relative', textAlign: 'right', color: 'var(--text-1)' }}>
           {row.size.toFixed(4)}
@@ -135,10 +139,10 @@ export function OrderBook({ book, pair, onPriceClick }: OrderBookProps) {
           className={'mono ' + (lastUp ? 'up' : 'down')}
           style={{ fontSize: 16, fontWeight: 600 }}
         >
-          {fmtPrice(last)}
+          {formatPrice(last)}
         </span>
         <span style={{ color: 'var(--text-2)', fontSize: 11 }} className="mono">
-          ≈ ${fmtPrice(last)}
+          ≈ ${formatPrice(last)}
         </span>
       </div>
 

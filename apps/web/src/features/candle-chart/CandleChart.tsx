@@ -1,13 +1,13 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { fmtPrice } from '@/features/trade-terminal/format';
-import type { Candle, Pair } from '@/features/trade-terminal/types';
+import { formatPrice } from '@/shared/lib/format';
+import type { Candle, MockPair } from '@/features/trade-terminal/types';
 import { TIMEFRAMES, type Timeframe } from './timeframes';
 
 interface CandleChartProps {
   candles: Candle[];
-  pair: Pair;
+  pair: MockPair;
   timeframe: Timeframe;
   onTimeframe: (tf: Timeframe) => void;
 }
@@ -126,28 +126,28 @@ export function CandleChart({ candles, pair, timeframe, onTimeframe }: CandleCha
           className="mono"
           style={{ fontSize: 11, color: lastUp ? 'var(--up)' : 'var(--down)' }}
         >
-          {fmtPrice(candles[N - 1].open)}
+          {formatPrice(candles[N - 1].open)}
         </span>
         <span style={{ fontSize: 11, color: 'var(--text-2)', marginLeft: 8 }}>H</span>
         <span
           className="mono"
           style={{ fontSize: 11, color: lastUp ? 'var(--up)' : 'var(--down)' }}
         >
-          {fmtPrice(candles[N - 1].high)}
+          {formatPrice(candles[N - 1].high)}
         </span>
         <span style={{ fontSize: 11, color: 'var(--text-2)', marginLeft: 8 }}>L</span>
         <span
           className="mono"
           style={{ fontSize: 11, color: lastUp ? 'var(--up)' : 'var(--down)' }}
         >
-          {fmtPrice(candles[N - 1].low)}
+          {formatPrice(candles[N - 1].low)}
         </span>
         <span style={{ fontSize: 11, color: 'var(--text-2)', marginLeft: 8 }}>C</span>
         <span
           className="mono"
           style={{ fontSize: 11, color: lastUp ? 'var(--up)' : 'var(--down)' }}
         >
-          {fmtPrice(candles[N - 1].close)}
+          {formatPrice(candles[N - 1].close)}
         </span>
       </div>
 
@@ -175,7 +175,7 @@ export function CandleChart({ candles, pair, timeframe, onTimeframe }: CandleCha
                 fontSize="10"
                 fontFamily="JetBrains Mono, monospace"
               >
-                {fmtPrice(v)}
+                {formatPrice(v)}
               </text>
             </g>
           ))}
@@ -224,7 +224,7 @@ export function CandleChart({ candles, pair, timeframe, onTimeframe }: CandleCha
             textAnchor="middle"
             fontWeight="600"
           >
-            {fmtPrice(lastClose)}
+            {formatPrice(lastClose)}
           </text>
 
           {candles.map((c, i) => {
@@ -314,7 +314,7 @@ export function CandleChart({ candles, pair, timeframe, onTimeframe }: CandleCha
               >
                 {(() => {
                   const p = hi - ((hover.y - PAD_T) / chartH) * (hi - lo);
-                  return fmtPrice(p);
+                  return formatPrice(p);
                 })()}
               </text>
             </g>
@@ -340,14 +340,14 @@ export function CandleChart({ candles, pair, timeframe, onTimeframe }: CandleCha
             <span style={{ color: 'var(--text-2)' }}>
               O{' '}
               <span className="mono" style={{ color: 'var(--text-0)' }}>
-                {fmtPrice(hover.candle.open)}
+                {formatPrice(hover.candle.open)}
               </span>
             </span>
             <span style={{ color: 'var(--text-2)' }}>
-              H <span className="mono up">{fmtPrice(hover.candle.high)}</span>
+              H <span className="mono up">{formatPrice(hover.candle.high)}</span>
             </span>
             <span style={{ color: 'var(--text-2)' }}>
-              L <span className="mono down">{fmtPrice(hover.candle.low)}</span>
+              L <span className="mono down">{formatPrice(hover.candle.low)}</span>
             </span>
             <span style={{ color: 'var(--text-2)' }}>
               C{' '}
@@ -357,7 +357,7 @@ export function CandleChart({ candles, pair, timeframe, onTimeframe }: CandleCha
                   color: hover.candle.close >= hover.candle.open ? 'var(--up)' : 'var(--down)',
                 }}
               >
-                {fmtPrice(hover.candle.close)}
+                {formatPrice(hover.candle.close)}
               </span>
             </span>
           </div>
