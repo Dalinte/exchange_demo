@@ -7,6 +7,10 @@ export const queryKeys = {
     all: ['tradingPairs'] as const,
     list: () => [...queryKeys.tradingPairs.all, 'list'] as const,
   },
+  tickers: {
+    all: ['tickers'] as const,
+    list: () => [...queryKeys.tickers.all, 'list'] as const,
+  },
   orders: {
     all: ['orders'] as const,
     list: (params: { status?: string; symbol?: string; limit?: number }) =>
