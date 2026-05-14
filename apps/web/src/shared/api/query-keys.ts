@@ -11,6 +11,11 @@ export const queryKeys = {
     all: ['tickers'] as const,
     list: () => [...queryKeys.tickers.all, 'list'] as const,
   },
+  klines: {
+    all: ['klines'] as const,
+    list: (symbol: string, interval: string) =>
+      [...queryKeys.klines.all, 'list', symbol, interval] as const,
+  },
   orders: {
     all: ['orders'] as const,
     list: (params: { status?: string; symbol?: string; limit?: number }) =>

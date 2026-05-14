@@ -1,10 +1,12 @@
 'use client';
 
 import { type ReactNode, useEffect, useState } from 'react';
+import { useConnectionState } from '@/shared/ws/use-connection-state';
 
 export function StatusFooter() {
   const [now, setNow] = useState<Date | null>(null);
   const [latency, setLatency] = useState(38);
+  const wsState = useConnectionState();
 
   useEffect(() => {
     setNow(new Date());
@@ -17,6 +19,15 @@ export function StatusFooter() {
 
   const utc = now ? now.toUTCString().slice(17, 25) : '--:--:--';
   const ping = latency < 50 ? 'var(--up)' : latency < 100 ? 'var(--brand)' : 'var(--down)';
+
+  const connection =
+    wsState === 'open'
+      ? { dot: 'var(--up)', label: 'Connected' }
+      : wsState === 'connecting'
+        ? { dot: 'var(--brand)', label: 'Connecting' }
+        : wsState === 'reconnecting'
+          ? { dot: 'var(--brand)', label: 'Reconnecting' }
+          : { dot: 'var(--down)', label: 'Disconnected' };
 
   return (
     <div
@@ -39,11 +50,11 @@ export function StatusFooter() {
             width: 6,
             height: 6,
             borderRadius: '50%',
-            background: 'var(--up)',
-            boxShadow: '0 0 6px var(--up)',
+            background: connection.dot,
+            boxShadow: `0 0 6px ${connection.dot}`,
           }}
         />
-        <span style={{ color: 'var(--text-1)' }}>Connected</span>
+        <span style={{ color: 'var(--text-1)' }}>{connection.label}</span>
       </Item>
       <Item>
         <span>API</span>

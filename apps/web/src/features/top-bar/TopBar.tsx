@@ -9,6 +9,7 @@ import { formatDecimal, formatPrice, formatSignedPercent } from '@/shared/lib/fo
 import { calculateTotalEquityUsdt } from '@/shared/lib/portfolio';
 import { formatPairDisplay } from '@/shared/lib/symbol';
 import { useMarketStore } from '@/shared/stores/market-store';
+import { TickerSubscription } from '@/shared/ws/TickerSubscription';
 
 interface TopBarProps {
   onReset: () => void;
@@ -278,6 +279,10 @@ export function TopBar({ onReset }: TopBarProps) {
           <Icon name="reset" size={13} /> Reset
         </button>
       </div>
+
+      {(tickers ?? []).map((t) => (
+        <TickerSubscription key={t.symbol} symbol={t.symbol} />
+      ))}
     </div>
   );
 }

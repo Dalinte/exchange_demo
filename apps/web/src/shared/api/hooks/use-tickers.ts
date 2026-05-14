@@ -6,8 +6,8 @@ export function useTickers() {
   return useQuery({
     queryKey: queryKeys.tickers.list(),
     queryFn: ({ signal }) => getTickers(signal),
-    staleTime: 5_000,
-    refetchInterval: 5_000,
+    staleTime: 30_000,
+    refetchInterval: 30_000,
   });
 }
 

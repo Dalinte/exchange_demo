@@ -1,11 +1,12 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useTickers } from '@/shared/api/hooks/use-tickers';
+import type { Kline } from '@exchange/shared';
+import { useTickerBySymbol } from '@/shared/api/hooks/use-tickers';
+import { useKlines } from '@/shared/api/hooks/use-klines';
+import { useKlineStream } from '@/shared/ws/use-kline-stream';
 import { formatDecimal, formatPrice } from '@/shared/lib/format';
 import { useMarketStore } from '@/shared/stores/market-store';
-import { genCandles } from '@/features/trade-terminal/mocks';
-import type { Candle } from '@/features/trade-terminal/types';
 import { TIMEFRAMES, type Timeframe } from './timeframes';
 
 interface CandleChartProps {
@@ -17,31 +18,19 @@ interface HoverState {
   x: number;
   y: number;
   idx: number;
-  candle: Candle;
+  candle: Kline;
 }
 
 export function CandleChart({ timeframe, onTimeframe }: CandleChartProps) {
   const symbol = useMarketStore((s) => s.symbol);
-  const { data: tickers } = useTickers();
-  const ticker = tickers?.find((t) => t.symbol === symbol);
-  const currentPrice = ticker?.lastPrice;
+  useKlineStream(symbol, timeframe);
+  const { data: candles = [] } = useKlines(symbol, timeframe);
+  const { data: ticker } = useTickerBySymbol(symbol);
   const volume24h = ticker?.volume24h ?? '0';
 
   const wrapRef = useRef<HTMLDivElement | null>(null);
   const [size, setSize] = useState({ w: 800, h: 360 });
   const [hover, setHover] = useState<HoverState | null>(null);
-  const [candles, setCandles] = useState<Candle[]>([]);
-  const seededKeyRef = useRef<string>('');
-
-  useEffect(() => {
-    if (!currentPrice) return;
-    const seed = parseFloat(currentPrice);
-    if (!Number.isFinite(seed) || seed <= 0) return;
-    const key = `${symbol}|${timeframe}`;
-    if (seededKeyRef.current === key) return;
-    seededKeyRef.current = key;
-    setCandles(genCandles(seed, 60));
-  }, [symbol, timeframe, currentPrice]);
 
   useEffect(() => {
     if (!wrapRef.current) return;
@@ -69,9 +58,12 @@ export function CandleChart({ timeframe, onTimeframe }: CandleChartProps) {
     let hi = -Infinity;
     let vMax = 0;
     for (const c of candles) {
-      if (c.low < lo) lo = c.low;
-      if (c.high > hi) hi = c.high;
-      if (c.volume > vMax) vMax = c.volume;
+      const low = Number(c.low);
+      const high = Number(c.high);
+      const vol = Number(c.volume);
+      if (low < lo) lo = low;
+      if (high > hi) hi = high;
+      if (vol > vMax) vMax = vol;
     }
     const pad = (hi - lo) * 0.06;
     return { lo: lo - pad, hi: hi + pad, vMax };
@@ -136,9 +128,9 @@ export function CandleChart({ timeframe, onTimeframe }: CandleChartProps) {
   );
 }
 
-function CandleHeaderStats({ candles }: { candles: Candle[] }) {
+function CandleHeaderStats({ candles }: { candles: Kline[] }) {
   const last = candles[candles.length - 1];
-  const lastUp = last.close >= last.open;
+  const lastUp = Number(last.close) >= Number(last.open);
   const color = lastUp ? 'var(--up)' : 'var(--down)';
   return (
     <>
@@ -164,7 +156,7 @@ function CandleHeaderStats({ candles }: { candles: Candle[] }) {
 
 interface CandleSvgProps {
   wrapRef: React.RefObject<HTMLDivElement | null>;
-  candles: Candle[];
+  candles: Kline[];
   stats: { lo: number; hi: number; vMax: number };
   size: { w: number; h: number };
   chartW: number;
@@ -203,8 +195,9 @@ function CandleSvg({
   const tickVals: number[] = [];
   for (let i = 0; i <= ticks; i++) tickVals.push(lo + (hi - lo) * (i / ticks));
 
-  const lastClose = candles[N - 1].close;
-  const lastUp = candles[N - 1].close >= candles[N - 1].open;
+  const lastCandle = candles[N - 1];
+  const lastCloseNum = Number(lastCandle.close);
+  const lastUp = lastCloseNum >= Number(lastCandle.open);
 
   function onMove(e: React.MouseEvent<HTMLDivElement>) {
     const rect = e.currentTarget.getBoundingClientRect();
@@ -213,6 +206,8 @@ function CandleSvg({
     const idx = Math.max(0, Math.min(N - 1, Math.floor((x - PAD_L) / slot)));
     setHover({ x, y, idx, candle: candles[idx] });
   }
+
+  const xLabelPositions = [0, 0.25, 0.5, 0.75, 0.99];
 
   return (
     <div
@@ -246,12 +241,16 @@ function CandleSvg({
 
         {candles.map((c, i) => {
           const x = PAD_L + i * slot + slot / 2;
-          const isUp = c.close >= c.open;
+          const open = Number(c.open);
+          const close = Number(c.close);
+          const high = Number(c.high);
+          const low = Number(c.low);
+          const isUp = close >= open;
           const color = isUp ? 'var(--up)' : 'var(--down)';
-          const yOpen = yScale(c.open);
-          const yClose = yScale(c.close);
-          const yHigh = yScale(c.high);
-          const yLow = yScale(c.low);
+          const yOpen = yScale(open);
+          const yClose = yScale(close);
+          const yHigh = yScale(high);
+          const yLow = yScale(low);
           const bodyTop = Math.min(yOpen, yClose);
           const bodyH = Math.max(1, Math.abs(yClose - yOpen));
           return (
@@ -265,15 +264,15 @@ function CandleSvg({
         <line
           x1={0}
           x2={chartW}
-          y1={yScale(lastClose)}
-          y2={yScale(lastClose)}
+          y1={yScale(lastCloseNum)}
+          y2={yScale(lastCloseNum)}
           stroke={lastUp ? 'var(--up)' : 'var(--down)'}
           strokeDasharray="3 3"
           opacity="0.5"
         />
         <rect
           x={chartW + 1}
-          y={yScale(lastClose) - 8}
+          y={yScale(lastCloseNum) - 8}
           width={62}
           height={16}
           fill={lastUp ? 'var(--up)' : 'var(--down)'}
@@ -281,22 +280,25 @@ function CandleSvg({
         />
         <text
           x={chartW + 32}
-          y={yScale(lastClose) + 3}
+          y={yScale(lastCloseNum) + 3}
           fill="#fff"
           fontSize="10"
           fontFamily="JetBrains Mono, monospace"
           textAnchor="middle"
           fontWeight="600"
         >
-          {formatPrice(lastClose)}
+          {formatPrice(lastCandle.close)}
         </text>
 
         {candles.map((c, i) => {
           const x = PAD_L + i * slot + slot / 2;
-          const isUp = c.close >= c.open;
+          const open = Number(c.open);
+          const close = Number(c.close);
+          const volume = Number(c.volume);
+          const isUp = close >= open;
           const color = isUp ? 'var(--up)' : 'var(--down)';
           const baseY = size.h - PAD_B;
-          const h = (c.volume / vMax) * VOL_H;
+          const h = (volume / vMax) * VOL_H;
           return (
             <rect
               key={'v' + i}
@@ -320,10 +322,10 @@ function CandleSvg({
           Vol {formatDecimal(volume24h, 2)}
         </text>
 
-        {[0, 0.25, 0.5, 0.75, 0.99].map((p, i) => {
+        {xLabelPositions.map((p, i) => {
           const idx = Math.floor(p * (N - 1));
           const x = PAD_L + idx * slot + slot / 2;
-          const labels = ['12:00', '13:00', '14:00', '15:00', '16:00'];
+          const label = new Date(candles[idx].openTime).toUTCString().slice(17, 22);
           return (
             <text
               key={'t' + i}
@@ -334,7 +336,7 @@ function CandleSvg({
               fontFamily="JetBrains Mono, monospace"
               textAnchor="middle"
             >
-              {labels[i]}
+              {label}
             </text>
           );
         })}
@@ -415,7 +417,10 @@ function CandleSvg({
             <span
               className="mono"
               style={{
-                color: hover.candle.close >= hover.candle.open ? 'var(--up)' : 'var(--down)',
+                color:
+                  Number(hover.candle.close) >= Number(hover.candle.open)
+                    ? 'var(--up)'
+                    : 'var(--down)',
               }}
             >
               {formatPrice(hover.candle.close)}
