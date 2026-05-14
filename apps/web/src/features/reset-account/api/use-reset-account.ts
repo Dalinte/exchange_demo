@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { resetAccount } from '@/shared/api/account';
+import { resetAccount } from './reset-account';
 
 export function useResetAccount() {
   const queryClient = useQueryClient();

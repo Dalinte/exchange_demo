@@ -5,9 +5,9 @@ import type {
   OrderView,
   TradingPairWithStats,
 } from '@exchange/shared';
-import { createOrder } from '@/shared/api/orders';
+import { createOrder } from '@/entities/order';
 import { queryKeys } from '@/shared/api/query-keys';
-import { applyOptimisticMarketOrder } from '@/shared/lib/optimistic-balance';
+import { applyOptimisticMarketOrder } from '../lib/optimistic-balance';
 
 interface CreateOrderContext {
   previousBalances: BalanceMap | undefined;

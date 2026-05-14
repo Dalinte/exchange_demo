@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { OrderView } from '@exchange/shared';
-import { cancelOrder } from '@/shared/api/orders';
+import { cancelOrder } from '@/entities/order';
 import { queryKeys } from '@/shared/api/query-keys';
 
 export function useCancelOrder() {

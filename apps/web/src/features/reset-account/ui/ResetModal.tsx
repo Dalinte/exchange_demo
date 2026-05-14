@@ -1,8 +1,8 @@
 'use client';
 
 import { toast } from 'sonner';
-import { useResetAccount } from '@/shared/api/hooks/mutations/use-reset-account';
-import { parseApiError } from '@/shared/lib/api-error';
+import { useResetAccount } from '../api/use-reset-account';
+import { parseApiError } from '@/shared/api/api-error';
 
 interface ResetModalProps {
   onClose: () => void;
