@@ -5,11 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Icon } from '@/shared/ui/Icon';
 import { useBalances } from '@/shared/api/hooks/use-balances';
 import { useTickers } from '@/shared/api/hooks/use-tickers';
-import {
-  formatDecimal,
-  formatPrice,
-  formatSignedPercent,
-} from '@/shared/lib/format';
+import { formatDecimal, formatPrice, formatSignedPercent } from '@/shared/lib/format';
 import { calculateTotalEquityUsdt } from '@/shared/lib/portfolio';
 import { formatPairDisplay } from '@/shared/lib/symbol';
 import { useMarketStore } from '@/shared/stores/market-store';

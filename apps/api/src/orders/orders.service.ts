@@ -1,5 +1,9 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
-import type { CreateMarketOrderDto, GetOrdersQuery, OrderView } from '@exchange/shared';
+import type {
+  CreateMarketOrderDto,
+  GetOrdersQuery,
+  OrderView,
+} from '@exchange/shared';
 import Decimal from 'decimal.js';
 import { Prisma } from '../../generated/prisma/client';
 import { BinancePriceService } from '../binance/binance-price.service';

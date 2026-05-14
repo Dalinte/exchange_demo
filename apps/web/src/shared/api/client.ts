@@ -34,10 +34,7 @@ interface ApiFetchOptions {
   signal?: AbortSignal;
 }
 
-export async function apiFetch<T = unknown>(
-  path: string,
-  opts: ApiFetchOptions = {},
-): Promise<T> {
+export async function apiFetch<T = unknown>(path: string, opts: ApiFetchOptions = {}): Promise<T> {
   if (!BASE_URL) throw new Error('NEXT_PUBLIC_API_URL is not set');
   const url = new URL(BASE_URL + path);
   if (opts.query) {

@@ -11,9 +11,7 @@ export const BalanceItemSchema = z
   })
   .meta({ id: 'BalanceItem' });
 
-export const BalanceMapSchema = z
-  .record(z.string(), BalanceItemSchema)
-  .meta({ id: 'BalanceMap' });
+export const BalanceMapSchema = z.record(z.string(), BalanceItemSchema).meta({ id: 'BalanceMap' });
 
 export type BalanceItem = z.infer<typeof BalanceItemSchema>;
 export type BalanceMap = z.infer<typeof BalanceMapSchema>;

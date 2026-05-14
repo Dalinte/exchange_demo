@@ -1,11 +1,7 @@
 'use client';
 
 import { formatPrice } from '@/shared/lib/format';
-import type {
-  MockPair,
-  OrderBookLevel,
-  OrderBookSnapshot,
-} from '@/features/trade-terminal/types';
+import type { MockPair, OrderBookLevel, OrderBookSnapshot } from '@/features/trade-terminal/types';
 
 interface OrderBookProps {
   book: OrderBookSnapshot | null;

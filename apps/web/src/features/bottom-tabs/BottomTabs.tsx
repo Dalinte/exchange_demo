@@ -72,9 +72,7 @@ export function BottomTabs({ onCancel }: BottomTabsProps) {
       </div>
 
       <div style={{ flex: 1, overflowY: 'auto', minHeight: 0 }}>
-        {tab === 'open' && (
-          <OpenOrders orders={openOrders} tickers={tickers} onCancel={onCancel} />
-        )}
+        {tab === 'open' && <OpenOrders orders={openOrders} tickers={tickers} onCancel={onCancel} />}
         {tab === 'history' && <OrderHistory orders={orderHistory} tickers={tickers} />}
         {tab === 'trades' && <TradeHistory trades={trades} tickers={tickers} />}
         {tab === 'balances' && <Balances balances={balances} />}

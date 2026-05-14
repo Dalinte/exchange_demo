@@ -52,7 +52,9 @@ export function OrderForm({
   const availUSDT = balances.USDT || 0;
   const availBase = balances[pair.base] || 0;
   const availLabel =
-    side === 'buy' ? `${formatDecimal(availUSDT, 4)} USDT` : `${formatDecimal(availBase, 6)} ${pair.base}`;
+    side === 'buy'
+      ? `${formatDecimal(availUSDT, 4)} USDT`
+      : `${formatDecimal(availBase, 6)} ${pair.base}`;
 
   function applyPct(p: number) {
     setPct(p);
