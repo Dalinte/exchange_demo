@@ -2,11 +2,10 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Kline } from '@exchange/shared';
-import { useTickerBySymbol } from '@/shared/api/hooks/use-tickers';
-import { useKlines } from '@/shared/api/hooks/use-klines';
-import { useKlineStream } from '@/shared/ws/use-kline-stream';
+import { useTickerBySymbol } from '@/entities/ticker';
+import { useKlines, useKlineStream } from '@/entities/kline';
+import { useMarketStore } from '@/entities/trading-pair';
 import { formatDecimal, formatPrice } from '@/shared/lib/format';
-import { useMarketStore } from '@/shared/stores/market-store';
 import { TIMEFRAMES, type Timeframe } from '../model/timeframes';
 
 interface CandleChartProps {

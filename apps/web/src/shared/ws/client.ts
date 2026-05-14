@@ -4,7 +4,7 @@ import {
   type WSMessage,
   type WSClientMessage,
 } from '@exchange/shared';
-import { useWsStore } from '@/shared/stores/ws-store';
+import { useWsStore } from './ws-store';
 
 export type ConnectionState = 'connecting' | 'open' | 'closed' | 'reconnecting';
 

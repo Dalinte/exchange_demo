@@ -5,14 +5,13 @@ import { type ReactNode, useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { z } from 'zod';
-import { useCreateOrder } from '@/shared/api/hooks/mutations/use-create-order';
-import { useBalances } from '@/shared/api/hooks/use-balances';
-import { useTickers } from '@/shared/api/hooks/use-tickers';
-import { useTradingPairs } from '@/shared/api/hooks/use-trading-pairs';
-import { parseApiError } from '@/shared/lib/api-error';
+import { useBalances } from '@/entities/balance';
+import { useTickers } from '@/entities/ticker';
+import { useTradingPairs, useMarketStore } from '@/entities/trading-pair';
+import { useCreateOrder } from '@/features/create-order';
+import { parseApiError } from '@/shared/api/api-error';
 import { Decimal, toFixedDown } from '@/shared/lib/decimal';
 import { formatDecimal, formatPrice } from '@/shared/lib/format';
-import { useMarketStore } from '@/shared/stores/market-store';
 
 interface OrderFormProps {
   presetPrice: string | null;

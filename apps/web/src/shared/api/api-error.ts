@@ -1,4 +1,4 @@
-import { ApiError, NetworkError } from '@/shared/api/client';
+import { ApiError, NetworkError } from './client';
 
 export function parseApiError(error: unknown): string {
   if (error instanceof NetworkError) {

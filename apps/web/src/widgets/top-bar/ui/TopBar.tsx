@@ -3,13 +3,10 @@
 import { type ReactNode, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ChevronDown, RotateCcw, Search, Star } from 'lucide-react';
-import { useBalances } from '@/shared/api/hooks/use-balances';
-import { useTickers } from '@/shared/api/hooks/use-tickers';
+import { useBalances, calculateTotalEquityUsdt } from '@/entities/balance';
+import { useTickers, TickerSubscription } from '@/entities/ticker';
+import { useMarketStore, formatPairDisplay } from '@/entities/trading-pair';
 import { formatDecimal, formatPrice, formatSignedPercent } from '@/shared/lib/format';
-import { calculateTotalEquityUsdt } from '@/shared/lib/portfolio';
-import { formatPairDisplay } from '@/shared/lib/symbol';
-import { useMarketStore } from '@/shared/stores/market-store';
-import { TickerSubscription } from '@/shared/ws/TickerSubscription';
 
 interface TopBarProps {
   onReset: () => void;

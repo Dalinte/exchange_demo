@@ -1,9 +1,9 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { useTickers } from '@/shared/api/hooks/use-tickers';
+import { useTickers } from '@/entities/ticker';
+import { useMarketStore } from '@/entities/trading-pair';
 import { formatPrice } from '@/shared/lib/format';
-import { useMarketStore } from '@/shared/stores/market-store';
 import { genOrderBook } from '@/widgets/order-book/lib/generate-mock-book';
 import type { OrderBookLevel, OrderBookSnapshot } from '@/widgets/order-book/lib/types';
 

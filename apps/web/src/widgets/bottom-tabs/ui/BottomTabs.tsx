@@ -3,12 +3,12 @@
 import { useState } from 'react';
 import { toast } from 'sonner';
 import type { BalanceMap, OrderView, TradeView, TradingPairWithStats } from '@exchange/shared';
-import { useCancelOrder } from '@/shared/api/hooks/mutations/use-cancel-order';
-import { useBalances } from '@/shared/api/hooks/use-balances';
-import { useOpenOrders, useOrderHistory } from '@/shared/api/hooks/use-orders';
-import { useTickers } from '@/shared/api/hooks/use-tickers';
-import { useTradeHistory } from '@/shared/api/hooks/use-trades';
-import { parseApiError } from '@/shared/lib/api-error';
+import { useBalances } from '@/entities/balance';
+import { useOpenOrders, useOrderHistory } from '@/entities/order';
+import { useTickers } from '@/entities/ticker';
+import { useTradeHistory } from '@/entities/trade';
+import { useCancelOrder } from '@/features/cancel-order';
+import { parseApiError } from '@/shared/api/api-error';
 import { formatDecimal, formatPrice, formatTime } from '@/shared/lib/format';
 
 type TabId = 'open' | 'history' | 'trades' | 'balances';
