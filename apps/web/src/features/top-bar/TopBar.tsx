@@ -2,7 +2,7 @@
 
 import { type ReactNode, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Icon } from '@/shared/ui/Icon';
+import { ChevronDown, RotateCcw, Search, Star } from 'lucide-react';
 import { useBalances } from '@/shared/api/hooks/use-balances';
 import { useTickers } from '@/shared/api/hooks/use-tickers';
 import { formatDecimal, formatPrice, formatSignedPercent } from '@/shared/lib/format';
@@ -94,7 +94,7 @@ export function TopBar({ onReset }: TopBarProps) {
           >
             <span>{active ? formatPairDisplay(active) : '...'}</span>
             <span style={{ color: 'var(--text-2)', display: 'inline-flex' }}>
-              <Icon name="caret-down" size={12} />
+              <ChevronDown size={12} />
             </span>
           </button>
           <button
@@ -102,7 +102,7 @@ export function TopBar({ onReset }: TopBarProps) {
             style={{ height: 22, padding: '0 6px', fontSize: 11 }}
             data-tip="Add to favorites"
           >
-            <Icon name="star" size={12} />
+            <Star size={12} />
           </button>
 
           {pickerOpen && (
@@ -126,7 +126,7 @@ export function TopBar({ onReset }: TopBarProps) {
               <div style={{ padding: 10, borderBottom: '1px solid var(--border)' }}>
                 <div className="search-wrap">
                   <span style={{ color: 'var(--text-3)' }}>
-                    <Icon name="search" size={13} />
+                    <Search size={13} />
                   </span>
                   <input
                     autoFocus
@@ -276,7 +276,7 @@ export function TopBar({ onReset }: TopBarProps) {
           </div>
         </div>
         <button className="btn btn-ghost" onClick={onReset} data-tip="Reset paper-trading balance">
-          <Icon name="reset" size={13} /> Reset
+          <RotateCcw size={13} /> Reset
         </button>
       </div>
 
