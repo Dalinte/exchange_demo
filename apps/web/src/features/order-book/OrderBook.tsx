@@ -4,8 +4,8 @@ import { useEffect, useRef, useState } from 'react';
 import { useTickers } from '@/shared/api/hooks/use-tickers';
 import { formatPrice } from '@/shared/lib/format';
 import { useMarketStore } from '@/shared/stores/market-store';
-import { genOrderBook } from '@/features/trade-terminal/mocks';
-import type { OrderBookLevel, OrderBookSnapshot } from '@/features/trade-terminal/types';
+import { genOrderBook } from '@/widgets/order-book/lib/generate-mock-book';
+import type { OrderBookLevel, OrderBookSnapshot } from '@/widgets/order-book/lib/types';
 
 interface OrderBookProps {
   onPriceClick?: (price: string) => void;

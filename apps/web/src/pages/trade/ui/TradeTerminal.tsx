@@ -2,16 +2,15 @@
 
 import { useState } from 'react';
 import { Toaster } from 'sonner';
-import { BottomTabs } from '@/features/bottom-tabs/BottomTabs';
-import { CandleChart } from '@/features/candle-chart/CandleChart';
-import type { Timeframe } from '@/features/candle-chart/timeframes';
-import { OrderBook } from '@/features/order-book/OrderBook';
-import { OrderForm } from '@/features/order-form/OrderForm';
-import { ResetModal } from '@/features/reset-modal/ResetModal';
-import { StatusFooter } from '@/features/status-footer/StatusFooter';
-import { TopBar } from '@/features/top-bar/TopBar';
-import { SymbolSync } from '@/shared/stores/SymbolSync';
-import { useMarketStore } from '@/shared/stores/market-store';
+import { BottomTabs } from '@/widgets/bottom-tabs';
+import { CandleChart } from '@/widgets/candle-chart';
+import { OrderBook } from '@/widgets/order-book';
+import { OrderForm } from '@/widgets/order-form';
+import { StatusFooter } from '@/widgets/status-footer';
+import { TopBar } from '@/widgets/top-bar';
+import { ResetModal } from '@/features/reset-account';
+import { SymbolSync, useMarketStore } from '@/entities/trading-pair';
+import type { Timeframe } from '@/widgets/candle-chart';
 
 interface TradeTerminalProps {
   initialSymbol: string;
