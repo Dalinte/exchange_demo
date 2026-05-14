@@ -10,7 +10,6 @@ import { StatusFooter } from '@/widgets/status-footer';
 import { TopBar } from '@/widgets/top-bar';
 import { ResetModal } from '@/features/reset-account';
 import { SymbolSync, useMarketStore } from '@/entities/trading-pair';
-import type { Timeframe } from '@/widgets/candle-chart';
 
 interface TradeTerminalProps {
   initialSymbol: string;
@@ -24,7 +23,6 @@ export function TradeTerminal({ initialSymbol }: TradeTerminalProps) {
     return true;
   });
 
-  const [timeframe, setTimeframe] = useState<Timeframe>('15m');
   const [presetPrice, setPresetPrice] = useState<string | null>(null);
   const [resetOpen, setResetOpen] = useState(false);
 
@@ -47,7 +45,7 @@ export function TradeTerminal({ initialSymbol }: TradeTerminalProps) {
                 minHeight: 0,
               }}
             >
-              <CandleChart timeframe={timeframe} onTimeframe={setTimeframe} />
+              <CandleChart />
             </div>
             <OrderBook onPriceClick={setPresetPrice} />
           </div>
