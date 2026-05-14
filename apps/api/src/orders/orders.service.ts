@@ -1,14 +1,9 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
-import type {
-  CreateMarketOrderDto,
-  GetOrdersQuery,
-  Order,
-  OrderList,
-} from '@exchange/shared';
+import type { CreateMarketOrderDto, GetOrdersQuery, OrderView } from '@exchange/shared';
 import Decimal from 'decimal.js';
 import { Prisma } from '../../generated/prisma/client';
 import { BinancePriceService } from '../binance/binance-price.service';
-import { serializeDecimal } from '../common/serialize-decimal';
+import { OrderMapper } from './order.mapper';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
@@ -16,12 +11,13 @@ export class OrdersService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly binancePrice: BinancePriceService,
+    private readonly orderMapper: OrderMapper,
   ) {}
 
   async findForAccount(
     accountId: string,
     query: GetOrdersQuery,
-  ): Promise<OrderList> {
+  ): Promise<OrderView[]> {
     let tradingPairId: string | undefined;
     if (query.symbol) {
       const pair = await this.prisma.tradingPair.findUnique({
@@ -38,17 +34,18 @@ export class OrdersService {
         ...(tradingPairId ? { tradingPairId } : {}),
         ...(query.status ? { status: query.status } : {}),
       },
+      include: { tradingPair: true },
       orderBy: { createdAt: 'desc' },
       take: query.limit,
     });
 
-    return serializeDecimal(orders) as OrderList;
+    return this.orderMapper.toViewList(orders);
   }
 
   async placeMarketOrder(
     accountId: string,
     dto: CreateMarketOrderDto,
-  ): Promise<Order> {
+  ): Promise<OrderView> {
     const pair = await this.prisma.tradingPair.findUnique({
       where: { symbol: dto.symbol },
     });
@@ -123,6 +120,7 @@ export class OrdersService {
             averageFillPrice: price.toFixed(),
             filledAt: now,
           },
+          include: { tradingPair: true },
         });
 
         await tx.trade.create({
@@ -142,6 +140,6 @@ export class OrdersService {
       { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
     );
 
-    return serializeDecimal(order) as Order;
+    return this.orderMapper.toView(order);
   }
 }

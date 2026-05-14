@@ -1,10 +1,9 @@
 import {
   CreateOrderSchema,
-  OrderListSchema,
-  OrderSchema,
+  OrderViewListSchema,
+  OrderViewSchema,
   type CreateOrderDto,
-  type Order,
-  type OrderList,
+  type OrderView,
 } from '@exchange/shared';
 import { apiFetch } from './client';
 
@@ -14,21 +13,24 @@ type GetOrdersParams = {
   limit?: number;
 };
 
-export async function getOrders(params: GetOrdersParams = {}, signal?: AbortSignal): Promise<OrderList> {
+export async function getOrders(
+  params: GetOrdersParams = {},
+  signal?: AbortSignal,
+): Promise<OrderView[]> {
   const data = await apiFetch('/orders', {
     query: { ...params },
     signal,
   });
-  return OrderListSchema.parse(data);
+  return OrderViewListSchema.parse(data);
 }
 
-export async function createOrder(dto: CreateOrderDto): Promise<Order> {
+export async function createOrder(dto: CreateOrderDto): Promise<OrderView> {
   const body = CreateOrderSchema.parse(dto);
   const data = await apiFetch('/orders', { method: 'POST', body });
-  return OrderSchema.parse(data);
+  return OrderViewSchema.parse(data);
 }
 
-export async function cancelOrder(id: string): Promise<Order> {
+export async function cancelOrder(id: string): Promise<OrderView> {
   const data = await apiFetch(`/orders/${id}`, { method: 'DELETE' });
-  return OrderSchema.parse(data);
+  return OrderViewSchema.parse(data);
 }

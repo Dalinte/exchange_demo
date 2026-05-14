@@ -2,6 +2,7 @@ import { BadRequestException } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import Decimal from 'decimal.js';
 import { BinancePriceService } from '../binance/binance-price.service';
+import { OrderMapper } from './order.mapper';
 import { PrismaService } from '../prisma/prisma.service';
 import { OrdersService } from './orders.service';
 
@@ -41,6 +42,7 @@ function createTx(): Tx {
           updatedAt: new Date('2026-01-01T00:00:00Z'),
           clientOrderId: null,
           price: null,
+          tradingPair: PAIR,
           ...data,
         }),
       ),
@@ -73,6 +75,7 @@ describe('OrdersService.placeMarketOrder', () => {
     const module = await Test.createTestingModule({
       providers: [
         OrdersService,
+        OrderMapper,
         { provide: PrismaService, useValue: prisma },
         { provide: BinancePriceService, useValue: binance },
       ],
@@ -112,6 +115,7 @@ describe('OrdersService.placeMarketOrder', () => {
         filledQuantity: '0.001',
         averageFillPrice: '50000',
       }),
+      include: { tradingPair: true },
     });
     expect(tx.trade.create).toHaveBeenCalledWith({
       data: expect.objectContaining({
@@ -224,6 +228,7 @@ describe('OrdersService.placeMarketOrder', () => {
 
     expect(tx.order.create).toHaveBeenCalledWith({
       data: expect.objectContaining({ quantity: '0.00199' }),
+      include: { tradingPair: true },
     });
     expect(tx.balance.upsert).toHaveBeenCalledWith(
       expect.objectContaining({

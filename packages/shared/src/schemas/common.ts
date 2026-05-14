@@ -2,15 +2,15 @@ import { z } from 'zod';
 
 export const DecimalStringSchema = z
   .string()
-  .regex(/^\d+(\.\d+)?$/, 'Must be a decimal string with digits and optional fraction')
+  .regex(/^-?\d+(\.\d+)?$/, 'Must be a decimal string with digits and optional fraction')
   .meta({
     description:
-      'Non-negative decimal as string to preserve precision (Decimal(36, 18) on the wire).',
+      'Decimal as string to preserve precision (Decimal(36, 18) on the wire). May be negative.',
     example: '10000.5',
   });
 
 export const PositiveDecimalStringSchema = DecimalStringSchema.refine(
-  (s) => /[1-9]/.test(s),
+  (s) => !s.startsWith('-') && /[1-9]/.test(s),
   'Must be greater than zero',
 ).meta({
   description: 'Strictly positive decimal as string.',

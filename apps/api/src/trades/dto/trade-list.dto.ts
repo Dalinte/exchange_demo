@@ -1,4 +1,4 @@
-import { TradeListSchema } from '@exchange/shared';
+import { TradeViewListSchema } from '@exchange/shared';
 import { createZodDto } from 'nestjs-zod';
 
-export class TradeListDto extends createZodDto(TradeListSchema) {}
+export class TradeListDto extends createZodDto(TradeViewListSchema) {}

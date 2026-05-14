@@ -14,7 +14,7 @@
    2. **Зачисление**: `balance.upsert` встречного актива (если строки нет — создаст).
    3. **Создаёт `Order`** со `status=FILLED`, `type=MARKET`, проставляет `filledQuantity`, `averageFillPrice`, `filledAt`.
    4. **Создаёт `Trade`** на этот ордер с теми же `quantity`, `price`, `quoteAmount`.
-7. Транзакция коммитится. Сервис прогоняет результат через `serializeDecimal` (Decimal → строка, Date → ISO) и возвращает `201` с телом `Order`.
+7. Транзакция коммитится. Сервис прогоняет ордер (вместе с подгруженным `tradingPair`) через `OrderMapper.toView` — он превращает Decimal/Date в строки, подставляет `symbol` из пары и считает производный `total`. Контроллер возвращает `201` с телом `OrderView`.
 
 ## Денежная арифметика
 
@@ -37,9 +37,10 @@
 
 - [`apps/api/src/orders/orders.controller.ts`](../apps/api/src/orders/orders.controller.ts) — `POST /api/orders`, ветка LIMIT → 501.
 - [`apps/api/src/orders/orders.service.ts`](../apps/api/src/orders/orders.service.ts) — `placeMarketOrder`.
+- [`apps/api/src/orders/order.mapper.ts`](../apps/api/src/orders/order.mapper.ts) — Entity → `OrderView` (включая расчёт `total`).
 - [`apps/api/src/binance/binance-price.service.ts`](../apps/api/src/binance/binance-price.service.ts) — цена с Binance + кэш.
 - [`apps/api/src/orders/orders.service.spec.ts`](../apps/api/src/orders/orders.service.spec.ts) — unit-тесты на BUY/SELL, недостаток средств, невалидную/неактивную пару, округление вниз.
-- Schema: [`packages/shared/src/schemas/order.ts`](../packages/shared/src/schemas/order.ts) — `CreateOrderSchema` (discriminated union), `OrderSchema`.
+- Schemas: [`packages/shared/src/schemas/dto/create-order.ts`](../packages/shared/src/schemas/dto/create-order.ts) (`CreateOrderSchema` — что фронт шлёт), [`packages/shared/src/schemas/views/order.ts`](../packages/shared/src/schemas/views/order.ts) (`OrderViewSchema` — что API отдаёт).
 
 ## Ошибки
 

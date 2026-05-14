@@ -20,41 +20,54 @@
 
 ```
 packages/shared/src/schemas/
-├── common.ts          # DecimalString, Uuid, Timestamp, enums
-├── trading-pair.ts    # TradingPair
-├── balance.ts         # Balance
-├── order.ts           # Order, CreateMarketOrder, CreateLimitOrder, CreateOrder (discriminated union)
-├── trade.ts           # Trade
-├── account.ts         # Account, AccountSummary
-├── ws-messages.ts     # KlineUpdate, TickerUpdate, OrderUpdate, BalanceUpdate, WSMessage
-└── example.ts         # HealthResponse
+├── common.ts                       # DecimalString, PositiveDecimalString, Uuid, Timestamp, enums
+├── views/
+│   ├── trading-pair.ts             # TradingPair, TradingPairWithStats (для GET /trading-pairs и /tickers)
+│   ├── balance.ts                  # BalanceItem, BalanceMap (для GET /balances)
+│   ├── order.ts                    # OrderView
+│   ├── trade.ts                    # TradeView
+│   └── health.ts                   # HealthResponse
+├── dto/
+│   ├── create-order.ts             # CreateMarketOrder, CreateLimitOrder, CreateOrder (discriminated union)
+│   └── queries.ts                  # GetOrdersQuery, GetTradesQuery
+├── ws-messages.ts                  # KlineUpdate, TickerUpdate, OrderUpdate, BalanceUpdate, WSMessage
+└── ws-client.ts                    # SubscribeMessage, UnsubscribeMessage, WSClientMessage
 ```
 
-DTO-классы для контроллеров — тонкие обёртки через `createZodDto`:
+`views/*` — то, что API отдаёт фронту (с производными полями вроде `total` ордера и `valueUsdt` баланса).
+`dto/*` — то, что фронт шлёт на бэк (валидация входов).
+Подробнее про переход `Prisma entity → View` — см. [docs/api-mappers.md](api-mappers.md).
+
+DTO-классы для контроллеров — тонкие обёртки через `createZodDto`, лежат рядом с фичей в `apps/api/src/<feature>/dto/`:
 
 ```ts
-// apps/api/src/common/dto/account-summary.dto.ts
-import { AccountSummarySchema } from '@exchange/shared';
+// apps/api/src/balances/dto/balance-map.dto.ts
+import { BalanceMapSchema } from '@exchange/shared';
 import { createZodDto } from 'nestjs-zod';
 
-export class AccountSummaryDto extends createZodDto(AccountSummarySchema) {}
+export class BalanceMapDto extends createZodDto(BalanceMapSchema) {}
 ```
 
 В контроллере достаточно сослаться на DTO в сигнатуре и в `@ApiOkResponse`:
 
 ```ts
-@Get('me')
-@ApiOkResponse({ type: AccountSummaryDto })
-async me(): Promise<AccountSummaryDto> { ... }
+@Get()
+@ApiOkResponse({ type: BalanceMapDto })
+async list(@CurrentUser() user: CurrentUserType): Promise<BalanceMapDto> { ... }
 ```
 
 ## Денежные значения на проводе
 
-Все Decimal-поля (`free`, `locked`, `quantity`, `price`, ...) сериализуются как **строки**, не числа. Причина: PostgreSQL `Decimal(36, 18)` не помещается в JS `number` без потери точности. Схема `DecimalStringSchema` валидирует формат: только цифры и опциональная точка, без знака и экспоненты.
+Все Decimal-поля (`free`, `locked`, `quantity`, `price`, ...) сериализуются как **строки**, не числа. Причина: PostgreSQL `Decimal(36, 18)` не помещается в JS `number` без потери точности.
 
-Арифметические операции над деньгами — через `decimal.js`. Никаких `+`, `-` на сырых числах.
+Две схемы:
 
-В контроллере перед возвратом — явный `.toString()` на `Prisma.Decimal`-полях. См. `apps/api/src/account/account.controller.ts:23` для примера.
+- `DecimalStringSchema` — `^-?\d+(\.\d+)?$`. Допускает знак минус (нужно для `priceChangePercent24h` и подобных метрик).
+- `PositiveDecimalStringSchema` — строго `> 0`. Используется в `CreateOrder` (`quantity`, `price` лимитника).
+
+Арифметика над деньгами — через `decimal.js`. Никаких `+`, `-` на сырых числах.
+
+Сериализация `Prisma.Decimal → string` и `Date → ISO` живёт в мапперах рядом с фичей (`apps/api/src/<feature>/<feature>.mapper.ts`) — не в контроллерах и не в сервисах. Контроллер возвращает уже готовый View. См. [docs/api-mappers.md](api-mappers.md).
 
 ## Swagger UI и cookie-аутентификация
 
@@ -83,8 +96,9 @@ npm run build:watch --workspace=@exchange/shared  # watch-режим для ак
 
 ## Где это лежит
 
-- [`packages/shared/src/schemas/`](../packages/shared/src/schemas/) — Zod-схемы (источник правды).
-- [`apps/api/src/common/dto/`](../apps/api/src/common/dto/) — DTO-классы через `createZodDto`.
+- [`packages/shared/src/schemas/`](../packages/shared/src/schemas/) — Zod-схемы (источник правды): `common`, `views/*`, `dto/*`, `ws-*`.
+- DTO-классы через `createZodDto` — рядом с фичей: [`apps/api/src/balances/dto/`](../apps/api/src/balances/dto/), [`apps/api/src/orders/dto/`](../apps/api/src/orders/dto/), [`apps/api/src/trades/dto/`](../apps/api/src/trades/dto/), [`apps/api/src/trading-pairs/dto/`](../apps/api/src/trading-pairs/dto/), [`apps/api/src/health/dto/`](../apps/api/src/health/dto/).
+- Мапперы Entity → View — рядом со своими сервисами: [`trading-pair.mapper.ts`](../apps/api/src/trading-pairs/trading-pair.mapper.ts), [`balance.mapper.ts`](../apps/api/src/balances/balance.mapper.ts), [`order.mapper.ts`](../apps/api/src/orders/order.mapper.ts), [`trade.mapper.ts`](../apps/api/src/trades/trade.mapper.ts).
 - [`apps/api/src/app.module.ts`](../apps/api/src/app.module.ts) — `APP_PIPE: ZodValidationPipe` (глобальная валидация).
 - [`apps/api/src/swagger.ts`](../apps/api/src/swagger.ts) — `DocumentBuilder`, `cleanupOpenApiDoc`, `SwaggerModule.setup('api/docs', ...)`.
 - [`apps/api/src/main.ts`](../apps/api/src/main.ts) — bootstrap, CORS, вызов `setupSwagger(app)`.
@@ -92,6 +106,6 @@ npm run build:watch --workspace=@exchange/shared  # watch-режим для ак
 ## Известные ограничения
 
 - **Output-валидация не включена.** `ZodValidationPipe` валидирует только вход. Для проверки структуры ответа против схемы есть `createZodSerializerInterceptor` из `nestjs-zod` (Zod 4 only) — не подключён, потому что преждевременно. Если ответ контроллера разойдётся со схемой, рантайм этого не поймает; поможет только TypeScript на этапе компиляции.
-- **Имена схем в OpenAPI выводятся из имени DTO-класса.** Метаданные `.meta({ id: 'Foo' })` на shared-схемах overrides не работают после `createZodDto` — итоговое имя всегда `<DtoClassName>`. Вложенные объекты получают имя вида `<ParentDto><Field>` (например, `AccountSummaryDtoBalance`). Для целей UI читается, но если нужен идеальный ref — придётся обходить через ручной `@ApiProperty` или ждать поддержки в nestjs-zod.
+- **Имена схем в OpenAPI выводятся из имени DTO-класса.** Метаданные `.meta({ id: 'Foo' })` на shared-схемах overrides не работают после `createZodDto` — итоговое имя всегда `<DtoClassName>`. Вложенные объекты получают имя вида `<ParentDto><Field>`. Для целей UI читается, но если нужен идеальный ref — придётся обходить через ручной `@ApiProperty` или ждать поддержки в nestjs-zod.
 - **Нужно ребилдить shared при правке схем.** Если api не видит новых полей — проверь, что `npm run build --workspace=@exchange/shared` отработал. Для удобства держи `build:watch` в соседнем терминале.
 - **WebSocket-схемы пока без OpenAPI.** `WSMessageSchema` существует и используется на фронте/беке, но в Swagger не светится — REST OpenAPI не покрывает WS-протокол.

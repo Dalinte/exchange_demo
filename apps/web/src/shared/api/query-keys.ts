@@ -1,7 +1,7 @@
 export const queryKeys = {
-  account: {
-    all: ['account'] as const,
-    me: () => [...queryKeys.account.all, 'me'] as const,
+  balances: {
+    all: ['balances'] as const,
+    list: () => [...queryKeys.balances.all, 'list'] as const,
   },
   tradingPairs: {
     all: ['tradingPairs'] as const,

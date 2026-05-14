@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { OrderStatusSchema } from './common.js';
+import { OrderStatusSchema } from '../common.js';
 
 const LimitSchema = z.coerce.number().int().min(1).max(200).default(50);
 

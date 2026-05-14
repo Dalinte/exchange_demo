@@ -28,14 +28,18 @@ export class HealthController {
   async check(
     @Res({ passthrough: true }) res: Response,
   ): Promise<HealthResponseDto> {
-    const db = await this.checkDb();
+    const database = await this.checkDb();
     const binance: HealthCheckStatus = this.binanceStream.isConnected
       ? 'connected'
       : 'disconnected';
     const status: 'ok' | 'degraded' =
-      db === 'connected' && binance === 'connected' ? 'ok' : 'degraded';
+      database === 'connected' && binance === 'connected' ? 'ok' : 'degraded';
     if (status === 'degraded') res.status(503);
-    return { status, timestamp: Date.now(), checks: { db, binance } };
+    return {
+      status,
+      timestamp: new Date().toISOString(),
+      checks: { database, binance },
+    };
   }
 
   private async checkDb(): Promise<HealthCheckStatus> {

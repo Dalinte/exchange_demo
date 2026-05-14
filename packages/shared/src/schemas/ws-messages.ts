@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { DecimalStringSchema } from './common.js';
-import { BalanceSchema } from './balance.js';
-import { OrderSchema } from './order.js';
+import { BalanceItemSchema } from './views/balance.js';
+import { OrderViewSchema } from './views/order.js';
 
 const KlineDataSchema = z.object({
   open: DecimalStringSchema,
@@ -30,12 +30,12 @@ export const TickerUpdateSchema = z.object({
 
 export const OrderUpdateSchema = z.object({
   type: z.literal('order'),
-  data: OrderSchema,
+  data: OrderViewSchema,
 });
 
 export const BalanceUpdateSchema = z.object({
   type: z.literal('balance'),
-  data: BalanceSchema,
+  data: BalanceItemSchema,
 });
 
 export const WSErrorMessageSchema = z.object({

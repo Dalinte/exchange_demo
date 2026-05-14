@@ -6,6 +6,7 @@ import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { ZodValidationPipe } from 'nestjs-zod';
 import { AccountsModule } from './accounts/accounts.module';
 import { AnonymousUserMiddleware } from './auth/anonymous-user.middleware';
+import { BalancesModule } from './balances/balances.module';
 import { validateEnv } from './config/env.schema';
 import { ExchangeModule } from './exchange/exchange.module';
 import { HealthModule } from './health/health.module';
@@ -26,6 +27,7 @@ import { TradingPairsModule } from './trading-pairs/trading-pairs.module';
     HealthModule,
     TradingPairsModule,
     AccountsModule,
+    BalancesModule,
     TradesModule,
     OrdersModule,
     ExchangeModule,
