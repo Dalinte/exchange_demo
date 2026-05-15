@@ -14,39 +14,23 @@ export function ResetModal({ onClose }: ResetModalProps) {
   return (
     <div className="modal-backdrop" onClick={onClose}>
       <div className="modal" onClick={(e) => e.stopPropagation()}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-          <div
-            style={{
-              width: 32,
-              height: 32,
-              borderRadius: '50%',
-              background: 'var(--down-bg)',
-              color: 'var(--down)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: 16,
-              fontWeight: 700,
-            }}
-          >
+        <div className="mb-3 flex items-center gap-2.5">
+          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-down-bg text-down text-base font-bold">
             !
           </div>
-          <div style={{ fontSize: 15, fontWeight: 600 }}>Reset paper-trading account?</div>
+          <div className="text-[15px] font-semibold">Reset paper-trading account?</div>
         </div>
-        <div style={{ fontSize: 12, color: 'var(--text-2)', lineHeight: 1.5, marginBottom: 18 }}>
+        <div className="mb-[18px] text-[12px] leading-[1.5] text-text-2">
           This will clear all open orders, order history, trades, and reset all balances to the
-          starting amount of{' '}
-          <span className="mono" style={{ color: 'var(--text-0)' }}>
-            50,000 USDT
-          </span>
-          . This action cannot be undone.
+          starting amount of <span className="mono text-text-0">50,000 USDT</span>. This action
+          cannot be undone.
         </div>
-        <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+        <div className="flex justify-end gap-2">
           <button className="btn btn-ghost" onClick={onClose} disabled={resetAccount.isPending}>
             Cancel
           </button>
           <button
-            className="btn"
+            className="btn bg-down border-down text-white disabled:opacity-60"
             onClick={() =>
               resetAccount.mutate(undefined, {
                 onSuccess: () => {
@@ -57,12 +41,6 @@ export function ResetModal({ onClose }: ResetModalProps) {
               })
             }
             disabled={resetAccount.isPending}
-            style={{
-              background: 'var(--down)',
-              borderColor: 'var(--down)',
-              color: '#fff',
-              opacity: resetAccount.isPending ? 0.6 : 1,
-            }}
           >
             {resetAccount.isPending ? 'Resetting…' : 'Reset Account'}
           </button>

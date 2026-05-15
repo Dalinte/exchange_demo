@@ -48,81 +48,38 @@ export function TopBar({ onReset }: TopBarProps) {
   );
 
   return (
-    <div
-      style={{
-        height: 60,
-        display: 'flex',
-        alignItems: 'center',
-        borderBottom: '1px solid var(--border)',
-        background: 'var(--bg-1)',
-        padding: '0 16px',
-        flexShrink: 0,
-      }}
-    >
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
+    <div className="flex items-center h-[60px] shrink-0 px-4 border-b border-border bg-bg-1">
+      <div className="flex items-center gap-3 shrink-0">
         <span className="logo-mark">D</span>
-        <span style={{ fontWeight: 700, fontSize: 15, letterSpacing: '-.01em' }}>
-          Demo Exchange
-        </span>
+        <span className="text-[15px] font-bold tracking-tight">Demo Exchange</span>
         <span className="badge">PAPER</span>
       </div>
 
-      <div style={{ width: 1, height: 32, background: 'var(--border)', margin: '0 16px' }} />
+      <div className="w-px h-8 bg-border mx-4" />
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: 28, flex: 1, minWidth: 0 }}>
-        <div
-          ref={wrapRef}
-          style={{ display: 'flex', alignItems: 'center', gap: 6, position: 'relative' }}
-        >
+      <div className="flex items-center gap-7 flex-1 min-w-0">
+        <div ref={wrapRef} className="relative flex items-center gap-1.5">
           <button
             onClick={() => setPickerOpen((o) => !o)}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 8,
-              background: pickerOpen ? 'var(--bg-3)' : 'transparent',
-              border: '1px solid ' + (pickerOpen ? 'var(--border-strong)' : 'var(--border)'),
-              padding: '6px 10px',
-              borderRadius: 4,
-              fontSize: 16,
-              fontWeight: 600,
-              color: 'var(--text-0)',
-            }}
+            className={
+              'flex items-center gap-2 rounded-sm border px-2.5 py-1.5 text-base font-semibold text-text-0 ' +
+              (pickerOpen ? 'bg-bg-3 border-border-strong' : 'bg-transparent border-border')
+            }
           >
             <span>{active ? formatPairDisplay(active) : '...'}</span>
-            <span style={{ color: 'var(--text-2)', display: 'inline-flex' }}>
+            <span className="inline-flex text-text-2">
               <ChevronDown size={12} />
             </span>
           </button>
-          <button
-            className="btn btn-ghost"
-            style={{ height: 22, padding: '0 6px', fontSize: 11 }}
-            data-tip="Add to favorites"
-          >
+          <button className="btn btn-ghost h-[22px] px-1.5 text-[11px]" data-tip="Add to favorites">
             <Star size={12} />
           </button>
 
           {pickerOpen && (
-            <div
-              style={{
-                position: 'absolute',
-                top: 'calc(100% + 6px)',
-                left: 0,
-                width: 320,
-                background: 'var(--bg-2)',
-                border: '1px solid var(--border-strong)',
-                borderRadius: 6,
-                boxShadow: '0 12px 36px rgba(0,0,0,.5)',
-                zIndex: 200,
-                display: 'flex',
-                flexDirection: 'column',
-                maxHeight: 420,
-                overflow: 'hidden',
-              }}
-            >
-              <div style={{ padding: 10, borderBottom: '1px solid var(--border)' }}>
+            <div className="absolute left-0 top-[calc(100%+6px)] z-[200] flex max-h-[420px] w-80 flex-col overflow-hidden rounded-md border border-border-strong bg-bg-2 shadow-[0_12px_36px_rgba(0,0,0,.5)]">
+              <div className="p-2.5 border-b border-border">
                 <div className="search-wrap">
-                  <span style={{ color: 'var(--text-3)' }}>
+                  <span className="text-text-3">
                     <Search size={13} />
                   </span>
                   <input
@@ -135,35 +92,15 @@ export function TopBar({ onReset }: TopBarProps) {
                 </div>
               </div>
 
-              <div
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: '1fr 100px 60px',
-                  padding: '6px 12px',
-                  fontSize: 10,
-                  color: 'var(--text-2)',
-                  textTransform: 'uppercase',
-                  letterSpacing: '.04em',
-                  borderBottom: '1px solid var(--border)',
-                  background: 'var(--bg-1)',
-                }}
-              >
+              <div className="grid grid-cols-[1fr_100px_60px] px-3 py-1.5 text-[10px] text-text-2 uppercase tracking-wider border-b border-border bg-bg-1">
                 <span>Pair</span>
-                <span style={{ textAlign: 'right' }}>Last</span>
-                <span style={{ textAlign: 'right' }}>24h%</span>
+                <span className="text-right">Last</span>
+                <span className="text-right">24h%</span>
               </div>
 
-              <div style={{ flex: 1, overflowY: 'auto' }}>
+              <div className="flex-1 overflow-y-auto">
                 {tickers === undefined && (
-                  <div
-                    style={{
-                      display: 'grid',
-                      gridTemplateColumns: '1fr 100px 60px',
-                      padding: '8px 12px',
-                      fontSize: 12,
-                      color: 'var(--text-3)',
-                    }}
-                  >
+                  <div className="grid grid-cols-[1fr_100px_60px] px-3 py-2 text-[12px] text-text-3">
                     <span>Loading…</span>
                     <span />
                     <span />
@@ -176,51 +113,33 @@ export function TopBar({ onReset }: TopBarProps) {
                     return (
                       <div
                         key={t.symbol}
-                        className={'pair-row' + (isActive ? ' active' : '')}
+                        className={
+                          'pair-row ' +
+                          (isActive ? 'active ' : '') +
+                          'grid grid-cols-[1fr_100px_60px] px-3 py-2 text-[12px] cursor-default border-l-2 ' +
+                          (isActive ? 'border-accent-line' : 'border-transparent')
+                        }
                         onClick={() => {
                           router.push(`/trade/${t.symbol}`);
                           setPickerOpen(false);
                           setQuery('');
                         }}
-                        style={{
-                          display: 'grid',
-                          gridTemplateColumns: '1fr 100px 60px',
-                          padding: '8px 12px',
-                          fontSize: 12,
-                          cursor: 'default',
-                          borderLeft: isActive
-                            ? '2px solid var(--accent)'
-                            : '2px solid transparent',
-                        }}
                       >
-                        <span style={{ color: isActive ? 'var(--text-0)' : 'var(--text-1)' }}>
-                          <span style={{ fontWeight: 500 }}>{t.baseAsset}</span>
-                          <span style={{ color: 'var(--text-3)' }}>/{t.quoteAsset}</span>
+                        <span className={isActive ? 'text-text-0' : 'text-text-1'}>
+                          <span className="font-medium">{t.baseAsset}</span>
+                          <span className="text-text-3">/{t.quoteAsset}</span>
                         </span>
-                        <span
-                          className="mono"
-                          style={{ textAlign: 'right', color: 'var(--text-0)' }}
-                        >
+                        <span className="mono text-right text-text-0">
                           {formatPrice(t.lastPrice)}
                         </span>
-                        <span
-                          className={'mono ' + (pos ? 'up' : 'down')}
-                          style={{ textAlign: 'right', fontSize: 11 }}
-                        >
+                        <span className={'mono text-right text-[11px] ' + (pos ? 'up' : 'down')}>
                           {formatSignedPercent(t.priceChangePercent24h)}
                         </span>
                       </div>
                     );
                   })}
                 {tickers !== undefined && filtered.length === 0 && (
-                  <div
-                    style={{
-                      padding: 24,
-                      textAlign: 'center',
-                      color: 'var(--text-3)',
-                      fontSize: 11,
-                    }}
-                  >
+                  <div className="p-6 text-center text-text-3 text-[11px]">
                     No pairs match &quot;{query}&quot;
                   </div>
                 )}
@@ -230,13 +149,10 @@ export function TopBar({ onReset }: TopBarProps) {
         </div>
 
         <div
-          className="mono"
-          style={{
-            fontSize: 'var(--fs-price)',
-            fontWeight: 600,
-            color: chgPos ? 'var(--up)' : 'var(--down)',
-            letterSpacing: '-.01em',
-          }}
+          className={
+            'mono text-[length:var(--fs-price)] font-semibold tracking-tight ' +
+            (chgPos ? 'text-up' : 'text-down')
+          }
         >
           {active ? formatPrice(active.lastPrice) : '—'}
         </div>
@@ -255,21 +171,12 @@ export function TopBar({ onReset }: TopBarProps) {
         </Stat>
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
-        <div style={{ textAlign: 'right' }}>
-          <div
-            style={{
-              fontSize: 10,
-              color: 'var(--text-2)',
-              letterSpacing: '.04em',
-              textTransform: 'uppercase',
-            }}
-          >
-            Portfolio
-          </div>
-          <div className="mono" style={{ fontSize: 15, fontWeight: 600 }}>
+      <div className="flex items-center gap-3 shrink-0">
+        <div className="text-right">
+          <div className="text-[10px] text-text-2 uppercase tracking-wider">Portfolio</div>
+          <div className="mono text-[15px] font-semibold">
             {formatDecimal(totalEquity, 2)}{' '}
-            <span style={{ color: 'var(--text-2)', fontSize: 11, fontWeight: 400 }}>USDT</span>
+            <span className="text-text-2 text-[11px] font-normal">USDT</span>
           </div>
         </div>
         <button className="btn btn-ghost" onClick={onReset} data-tip="Reset paper-trading balance">
@@ -293,21 +200,9 @@ interface StatProps {
 
 function Stat({ label, children, className, mono }: StatProps) {
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-      <div
-        style={{
-          fontSize: 10,
-          color: 'var(--text-2)',
-          letterSpacing: '.04em',
-          textTransform: 'uppercase',
-        }}
-      >
-        {label}
-      </div>
-      <div
-        className={(mono ? 'mono ' : '') + (className || '')}
-        style={{ fontSize: 12, fontWeight: 500 }}
-      >
+    <div className="flex flex-col gap-0.5">
+      <div className="text-[10px] text-text-2 uppercase tracking-wider">{label}</div>
+      <div className={'text-[12px] font-medium ' + (mono ? 'mono ' : '') + (className || '')}>
         {children}
       </div>
     </div>

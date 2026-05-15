@@ -23,19 +23,8 @@ export function ChartToolbar({ candles }: ChartToolbarProps) {
   const setChartType = useChartStore((state) => state.setChartType);
 
   return (
-    <div
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: 4,
-        padding: '6px 10px',
-        borderBottom: '1px solid var(--border)',
-        background: 'var(--bg-1)',
-        flexShrink: 0,
-        height: 36,
-      }}
-    >
-      <div style={{ display: 'flex', gap: 0 }}>
+    <div className="flex items-center gap-1 px-2.5 py-1.5 border-b border-border bg-bg-1 shrink-0 h-9">
+      <div className="flex">
         {KLINE_INTERVALS.map((value) => (
           <button
             key={value}
@@ -46,8 +35,8 @@ export function ChartToolbar({ candles }: ChartToolbarProps) {
           </button>
         ))}
       </div>
-      <div style={{ width: 1, height: 16, background: 'var(--border)', margin: '0 8px' }} />
-      <div style={{ display: 'flex', gap: 0 }}>
+      <div className="w-px h-4 bg-border mx-2" />
+      <div className="flex">
         {CHART_TYPE_OPTIONS.map((option) => (
           <button
             key={option.value}
@@ -58,7 +47,7 @@ export function ChartToolbar({ candles }: ChartToolbarProps) {
           </button>
         ))}
       </div>
-      <div style={{ flex: 1 }} />
+      <div className="flex-1" />
       {candles.length > 0 && <LastCandleStats candles={candles} />}
     </div>
   );
@@ -67,25 +56,17 @@ export function ChartToolbar({ candles }: ChartToolbarProps) {
 function LastCandleStats({ candles }: { candles: Kline[] }) {
   const last = candles[candles.length - 1];
   const isUp = Number(last.close) >= Number(last.open);
-  const color = isUp ? 'var(--up)' : 'var(--down)';
+  const colorClass = isUp ? 'text-up' : 'text-down';
   return (
     <>
-      <span style={{ fontSize: 11, color: 'var(--text-2)' }}>O</span>
-      <span className="mono" style={{ fontSize: 11, color }}>
-        {formatPrice(last.open)}
-      </span>
-      <span style={{ fontSize: 11, color: 'var(--text-2)', marginLeft: 8 }}>H</span>
-      <span className="mono" style={{ fontSize: 11, color }}>
-        {formatPrice(last.high)}
-      </span>
-      <span style={{ fontSize: 11, color: 'var(--text-2)', marginLeft: 8 }}>L</span>
-      <span className="mono" style={{ fontSize: 11, color }}>
-        {formatPrice(last.low)}
-      </span>
-      <span style={{ fontSize: 11, color: 'var(--text-2)', marginLeft: 8 }}>C</span>
-      <span className="mono" style={{ fontSize: 11, color }}>
-        {formatPrice(last.close)}
-      </span>
+      <span className="text-[11px] text-text-2">O</span>
+      <span className={'mono text-[11px] ' + colorClass}>{formatPrice(last.open)}</span>
+      <span className="text-[11px] text-text-2 ml-2">H</span>
+      <span className={'mono text-[11px] ' + colorClass}>{formatPrice(last.high)}</span>
+      <span className="text-[11px] text-text-2 ml-2">L</span>
+      <span className={'mono text-[11px] ' + colorClass}>{formatPrice(last.low)}</span>
+      <span className="text-[11px] text-text-2 ml-2">C</span>
+      <span className={'mono text-[11px] ' + colorClass}>{formatPrice(last.close)}</span>
     </>
   );
 }

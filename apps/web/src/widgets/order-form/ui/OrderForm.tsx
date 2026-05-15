@@ -150,19 +150,7 @@ export function OrderForm({ presetPrice, onPresetConsumed }: OrderFormProps) {
   const stops = [0, 25, 50, 75, 100];
 
   return (
-    <div
-      style={{
-        width: 320,
-        flexShrink: 0,
-        borderLeft: '1px solid var(--border)',
-        background: 'var(--bg-1)',
-        display: 'flex',
-        flexDirection: 'column',
-        padding: 12,
-        gap: 12,
-        overflowY: 'auto',
-      }}
-    >
+    <div className="flex flex-col w-80 shrink-0 gap-3 p-3 overflow-y-auto border-l border-border bg-bg-1">
       <div className="side-toggle">
         <button
           className={'buy' + (side === 'BUY' ? ' active' : '')}
@@ -178,66 +166,38 @@ export function OrderForm({ presetPrice, onPresetConsumed }: OrderFormProps) {
         </button>
       </div>
 
-      <div style={{ display: 'flex', gap: 0, borderBottom: '1px solid var(--border)' }}>
+      <div className="flex border-b border-border">
         {(['LIMIT', 'MARKET'] as const).map((t) => (
           <button
             key={t}
             onClick={() => setValue('type', t)}
-            style={{
-              background: 'transparent',
-              border: 0,
-              color: type === t ? 'var(--text-0)' : 'var(--text-2)',
-              padding: '8px 14px',
-              fontSize: 12,
-              fontWeight: type === t ? 600 : 400,
-              borderBottom: type === t ? '2px solid var(--accent)' : '2px solid transparent',
-              marginBottom: -1,
-              textTransform: 'capitalize',
-            }}
+            className={
+              'px-3.5 py-2 text-[12px] capitalize bg-transparent border-0 -mb-px border-b-2 ' +
+              (type === t
+                ? 'text-text-0 font-semibold border-accent-line'
+                : 'text-text-2 font-normal border-transparent')
+            }
           >
             {t.toLowerCase()}
           </button>
         ))}
       </div>
 
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          fontSize: 11,
-        }}
-      >
-        <span style={{ color: 'var(--text-2)' }}>Available</span>
-        <span className="mono" style={{ color: 'var(--text-1)' }}>
-          {availableLabel}
-        </span>
+      <div className="flex items-center justify-between text-[11px]">
+        <span className="text-text-2">Available</span>
+        <span className="mono text-text-1">{availableLabel}</span>
       </div>
 
       {type === 'LIMIT' && (
         <FormRow label="Price">
-          <FieldNum
-            value={price}
-            onChange={(v) => setValue('price', v)}
-            unit={quoteAsset}
-          />
+          <FieldNum value={price} onChange={(v) => setValue('price', v)} unit={quoteAsset} />
         </FormRow>
       )}
 
       {type === 'MARKET' && (
-        <div
-          style={{
-            padding: '8px 10px',
-            background: 'var(--bg-2)',
-            border: '1px dashed var(--border)',
-            borderRadius: 4,
-            fontSize: 11,
-            color: 'var(--text-2)',
-            textAlign: 'center',
-          }}
-        >
+        <div className="rounded-sm border border-dashed border-border bg-bg-2 px-2.5 py-2 text-[11px] text-text-2 text-center">
           Will execute at market price{' '}
-          <span className="mono" style={{ color: 'var(--text-0)' }}>
+          <span className="mono text-text-0">
             ~ {formatPrice(currentPrice)} {quoteAsset}
           </span>
         </div>
@@ -281,39 +241,26 @@ export function OrderForm({ presetPrice, onPresetConsumed }: OrderFormProps) {
       </FormRow>
 
       {tooMuch && (
-        <div style={{ fontSize: 11, color: 'var(--down)' }}>
+        <div className="text-[11px] text-down">
           Insufficient {side === 'BUY' ? quoteAsset : baseAsset} balance
         </div>
       )}
 
       <button
-        className={'action-btn ' + side.toLowerCase()}
+        className={'action-btn ' + side.toLowerCase() + (disabled ? ' opacity-[0.45]' : '')}
         onClick={onSubmit}
         disabled={disabled}
-        style={{ opacity: disabled ? 0.45 : 1 }}
       >
         {createOrder.isPending ? 'Placing…' : `${side === 'BUY' ? 'Buy' : 'Sell'} ${baseAsset}`}
       </button>
 
-      <div
-        style={{
-          marginTop: 4,
-          padding: 10,
-          background: 'var(--bg-2)',
-          border: '1px solid var(--border)',
-          borderRadius: 4,
-          fontSize: 11,
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 4,
-        }}
-      >
-        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-          <span style={{ color: 'var(--text-2)' }}>{quoteAsset}</span>
+      <div className="mt-1 flex flex-col gap-1 rounded-sm border border-border bg-bg-2 p-2.5 text-[11px]">
+        <div className="flex justify-between">
+          <span className="text-text-2">{quoteAsset}</span>
           <span className="mono">{formatDecimal(availableQuote, 2)}</span>
         </div>
-        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-          <span style={{ color: 'var(--text-2)' }}>{baseAsset || '—'}</span>
+        <div className="flex justify-between">
+          <span className="text-text-2">{baseAsset || '—'}</span>
           <span className="mono">{formatDecimal(availableBase, 6)}</span>
         </div>
       </div>
@@ -337,17 +284,8 @@ interface FormRowProps {
 
 function FormRow({ label, children }: FormRowProps) {
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-      <div
-        style={{
-          fontSize: 10,
-          color: 'var(--text-2)',
-          textTransform: 'uppercase',
-          letterSpacing: '.04em',
-        }}
-      >
-        {label}
-      </div>
+    <div className="flex flex-col gap-1">
+      <div className="text-[10px] uppercase tracking-wider text-text-2">{label}</div>
       {children}
     </div>
   );
@@ -362,27 +300,15 @@ interface FieldNumProps {
 
 function FieldNum({ value, onChange, unit, placeholder }: FieldNumProps) {
   return (
-    <div style={{ position: 'relative' }}>
+    <div className="relative">
       <input
-        className="field"
+        className={'field ' + (unit ? 'pr-14' : 'pr-2.5')}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder || ''}
-        style={{ paddingRight: unit ? 56 : 10 }}
       />
       {unit && (
-        <span
-          style={{
-            position: 'absolute',
-            right: 10,
-            top: '50%',
-            transform: 'translateY(-50%)',
-            fontSize: 11,
-            color: 'var(--text-2)',
-            fontFamily: 'JetBrains Mono, monospace',
-            pointerEvents: 'none',
-          }}
-        >
+        <span className="mono pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-[11px] text-text-2">
           {unit}
         </span>
       )}

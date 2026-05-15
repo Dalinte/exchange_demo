@@ -21,6 +21,29 @@
   --color-input: var(--border);
   --color-ring: var(--border-strong);
   --radius: 0.5rem;
+
+  /* surfaces */
+  --color-bg-0: var(--bg-0);
+  --color-bg-1: var(--bg-1);
+  --color-bg-2: var(--bg-2);
+  --color-bg-3: var(--bg-3);
+  --color-bg-hover: var(--bg-hover);
+
+  /* text scale */
+  --color-text-0: var(--text-0);
+  --color-text-1: var(--text-1);
+  --color-text-2: var(--text-2);
+  --color-text-3: var(--text-3);
+
+  /* semantic */
+  --color-up: var(--up);
+  --color-up-bg: var(--up-bg);
+  --color-down: var(--down);
+  --color-down-bg: var(--down-bg);
+  --color-brand: var(--brand);
+  --color-brand-2: var(--brand-2);
+  --color-accent-line: var(--accent);
+  --color-border-strong: var(--border-strong);
 }
 
 :root {
@@ -43,12 +66,8 @@
   --brand-2: #ffffff;
   --accent: #f5f5f5;
 
-  --row-h: 28px;
-  --pad-x: 12px;
-  --pad-y: 8px;
   --fs-body: 12px;
   --fs-label: 11px;
-  --fs-num: 12px;
   --fs-price: 22px;
 }
 

@@ -18,6 +18,10 @@ export class KlinesController {
   })
   @ApiOkResponse({ type: KlineListDto })
   async list(@Query() query: GetKlinesQueryDto): Promise<KlineListDto> {
-    return this.binancePrice.getKlines(query.symbol, query.interval, query.limit);
+    return this.binancePrice.getKlines(
+      query.symbol,
+      query.interval,
+      query.limit,
+    );
   }
 }

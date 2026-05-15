@@ -51,130 +51,52 @@ export function OrderBook({ onPriceClick }: OrderBookProps) {
     const percent = (row.cum / maxCum) * 100;
     return (
       <div
-        className="ob-row"
+        className="ob-row relative grid grid-cols-3 items-center px-3 h-5 text-[11px] mono cursor-default"
         onClick={() => onPriceClick && onPriceClick(String(row.price))}
-        style={{
-          display: 'grid',
-          gridTemplateColumns: '1fr 1fr 1fr',
-          padding: '2px 12px',
-          fontSize: 11,
-          fontFamily: 'JetBrains Mono, monospace',
-          fontVariantNumeric: 'tabular-nums',
-          height: 20,
-          alignItems: 'center',
-          position: 'relative',
-          cursor: 'default',
-        }}
       >
         <div
-          style={{
-            position: 'absolute',
-            right: 0,
-            top: 0,
-            bottom: 0,
-            width: percent + '%',
-            background: side === 'ask' ? 'var(--down-bg)' : 'var(--up-bg)',
-            pointerEvents: 'none',
-          }}
+          className={
+            'absolute right-0 top-0 bottom-0 pointer-events-none ' +
+            (side === 'ask' ? 'bg-down-bg' : 'bg-up-bg')
+          }
+          style={{ width: percent + '%' }}
         />
-        <span style={{ position: 'relative', color: side === 'ask' ? 'var(--down)' : 'var(--up)' }}>
+        <span className={'relative ' + (side === 'ask' ? 'text-down' : 'text-up')}>
           {formatPrice(row.price)}
         </span>
-        <span style={{ position: 'relative', textAlign: 'right', color: 'var(--text-1)' }}>
-          {row.size.toFixed(4)}
-        </span>
-        <span style={{ position: 'relative', textAlign: 'right', color: 'var(--text-2)' }}>
-          {row.cum.toFixed(4)}
-        </span>
+        <span className="relative text-right text-text-1">{row.size.toFixed(4)}</span>
+        <span className="relative text-right text-text-2">{row.cum.toFixed(4)}</span>
       </div>
     );
   }
 
   return (
-    <div
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        borderLeft: '1px solid var(--border)',
-        borderRight: '1px solid var(--border)',
-        background: 'var(--bg-1)',
-        width: 240,
-        flexShrink: 0,
-        minHeight: 0,
-      }}
-    >
-      <div
-        style={{
-          padding: '8px 12px',
-          fontSize: 11,
-          fontWeight: 600,
-          borderBottom: '1px solid var(--border)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          height: 36,
-          flexShrink: 0,
-        }}
-      >
+    <div className="flex flex-col w-60 shrink-0 min-h-0 border-x border-border bg-bg-1">
+      <div className="flex items-center justify-between h-9 px-3 py-2 border-b border-border text-[11px] font-semibold shrink-0">
         <span>Order Book</span>
-        <span style={{ color: 'var(--text-3)', fontWeight: 400, fontSize: 10 }}>0.1</span>
+        <span className="text-text-3 text-[10px] font-normal">0.1</span>
       </div>
 
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: '1fr 1fr 1fr',
-          padding: '4px 12px',
-          fontSize: 10,
-          color: 'var(--text-2)',
-          borderBottom: '1px solid var(--border)',
-          textTransform: 'uppercase',
-          letterSpacing: '.04em',
-        }}
-      >
+      <div className="grid grid-cols-3 px-3 py-1 text-[10px] text-text-2 uppercase tracking-wider border-b border-border">
         <span>Price ({quoteAsset})</span>
-        <span style={{ textAlign: 'right' }}>Size ({baseAsset})</span>
-        <span style={{ textAlign: 'right' }}>Sum</span>
+        <span className="text-right">Size ({baseAsset})</span>
+        <span className="text-right">Sum</span>
       </div>
 
-      <div
-        style={{
-          flex: 1,
-          overflowY: 'auto',
-          display: 'flex',
-          flexDirection: 'column-reverse',
-          minHeight: 0,
-        }}
-      >
+      <div className="flex-1 overflow-y-auto flex flex-col-reverse min-h-0">
         {book.asks.map((r, i) => (
           <Row key={i} row={r} side="ask" />
         ))}
       </div>
 
-      <div
-        style={{
-          padding: '8px 12px',
-          borderTop: '1px solid var(--border)',
-          borderBottom: '1px solid var(--border)',
-          background: 'var(--bg-2)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          flexShrink: 0,
-        }}
-      >
-        <span
-          className="mono"
-          style={{ fontSize: 16, fontWeight: 600, color: 'var(--text-0)' }}
-        >
+      <div className="flex items-center justify-between px-3 py-2 border-y border-border bg-bg-2 shrink-0">
+        <span className="mono text-base font-semibold text-text-0">
           {formatPrice(currentPrice ?? '')}
         </span>
-        <span style={{ color: 'var(--text-2)', fontSize: 11 }} className="mono">
-          ≈ ${formatPrice(currentPrice ?? '')}
-        </span>
+        <span className="mono text-text-2 text-[11px]">≈ ${formatPrice(currentPrice ?? '')}</span>
       </div>
 
-      <div style={{ flex: 1, overflowY: 'auto', minHeight: 0 }}>
+      <div className="flex-1 overflow-y-auto min-h-0">
         {book.bids.map((r, i) => (
           <Row key={i} row={r} side="bid" />
         ))}

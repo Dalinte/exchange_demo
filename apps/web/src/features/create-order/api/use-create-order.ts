@@ -1,10 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import type {
-  BalanceMap,
-  CreateOrderDto,
-  OrderView,
-  TradingPairWithStats,
-} from '@exchange/shared';
+import type { BalanceMap, CreateOrderDto, OrderView, TradingPairWithStats } from '@exchange/shared';
 import { createOrder } from '@/entities/order';
 import { queryKeys } from '@/shared/api/query-keys';
 import { applyOptimisticMarketOrder } from '../lib/optimistic-balance';

@@ -259,50 +259,22 @@ export function KlineChartView({ candles, chartType }: KlineChartViewProps) {
   }, [candles]);
 
   return (
-    <div
-      style={{
-        flex: 1,
-        position: 'relative',
-        minHeight: 0,
-        background: 'var(--bg-0)',
-      }}
-    >
-      <div ref={containerRef} style={{ position: 'absolute', inset: 0 }} />
+    <div className="relative flex-1 min-h-0 bg-bg-0">
+      <div ref={containerRef} className="absolute inset-0" />
       {hover && (
-        <div
-          style={{
-            position: 'absolute',
-            left: 8,
-            top: 8,
-            background: 'rgba(20,23,31,0.92)',
-            border: '1px solid var(--border)',
-            padding: '6px 10px',
-            fontSize: 11,
-            borderRadius: 3,
-            display: 'flex',
-            gap: 12,
-            pointerEvents: 'none',
-            zIndex: 2,
-          }}
-        >
-          <span style={{ color: 'var(--text-2)' }}>
-            O{' '}
-            <span className="mono" style={{ color: 'var(--text-0)' }}>
-              {formatPrice(hover.open)}
-            </span>
+        <div className="absolute left-2 top-2 flex gap-3 rounded-[3px] border border-border bg-[rgba(20,23,31,0.92)] px-2.5 py-1.5 text-[11px] pointer-events-none z-[2]">
+          <span className="text-text-2">
+            O <span className="mono text-text-0">{formatPrice(hover.open)}</span>
           </span>
-          <span style={{ color: 'var(--text-2)' }}>
+          <span className="text-text-2">
             H <span className="mono up">{formatPrice(hover.high)}</span>
           </span>
-          <span style={{ color: 'var(--text-2)' }}>
+          <span className="text-text-2">
             L <span className="mono down">{formatPrice(hover.low)}</span>
           </span>
-          <span style={{ color: 'var(--text-2)' }}>
+          <span className="text-text-2">
             C{' '}
-            <span
-              className="mono"
-              style={{ color: hover.close >= hover.open ? 'var(--up)' : 'var(--down)' }}
-            >
+            <span className={'mono ' + (hover.close >= hover.open ? 'text-up' : 'text-down')}>
               {formatPrice(hover.close)}
             </span>
           </span>

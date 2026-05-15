@@ -27,24 +27,14 @@ export function TradeTerminal({ initialSymbol }: TradeTerminalProps) {
   const [resetOpen, setResetOpen] = useState(false);
 
   return (
-    <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+    <div className="h-full flex flex-col">
       <SymbolSync />
       <TopBar onReset={() => setResetOpen(true)} />
 
-      <div style={{ flex: 1, display: 'flex', minHeight: 0, overflow: 'hidden' }}>
-        <div
-          style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, minHeight: 0 }}
-        >
-          <div style={{ flex: 1, display: 'flex', minHeight: 0 }}>
-            <div
-              style={{
-                flex: 1,
-                display: 'flex',
-                flexDirection: 'column',
-                minWidth: 0,
-                minHeight: 0,
-              }}
-            >
+      <div className="flex-1 flex min-h-0 overflow-hidden">
+        <div className="flex-1 flex flex-col min-w-0 min-h-0">
+          <div className="flex-1 flex min-h-0">
+            <div className="flex-1 flex flex-col min-w-0 min-h-0">
               <CandleChart />
             </div>
             <OrderBook onPriceClick={setPresetPrice} />

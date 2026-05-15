@@ -70,14 +70,14 @@ demo-exchange/
 
 `apps/web` следует методологии [Feature-Sliced Design](https://feature-sliced.design/). Слои выстроены от высокого уровня абстракции к низкому:
 
-| Слой | Папка | Назначение |
-|---|---|---|
-| **app** | `src/app/` | Провайдеры (TanStack Query) и глобальные стили. |
-| **pages** | `src/pages/` | Композиции страниц, соответствующие маршрутам Next.js. |
-| **widgets** | `src/widgets/` | Готовые UI-блоки: `top-bar`, `candle-chart`, `order-book`, `order-form`, `bottom-tabs`, `status-footer`. |
-| **features** | `src/features/` | Пользовательские действия: `create-order`, `cancel-order`, `reset-account`. |
-| **entities** | `src/entities/` | Бизнес-сущности с API и моделями: `balance`, `order`, `trade`, `trading-pair`, `ticker`, `kline`. |
-| **shared** | `src/shared/` | Переиспользуемые примитивы: `api/` (REST-клиент, query-keys, error-mapping), `ws/` (WebSocket-клиент, store, connection state), `lib/` (decimal, format, utils), `ui/` (shadcn-примитивы). |
+| Слой         | Папка           | Назначение                                                                                                                                                                                 |
+| ------------ | --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **app**      | `src/app/`      | Провайдеры (TanStack Query) и глобальные стили.                                                                                                                                            |
+| **pages**    | `src/pages/`    | Композиции страниц, соответствующие маршрутам Next.js.                                                                                                                                     |
+| **widgets**  | `src/widgets/`  | Готовые UI-блоки: `top-bar`, `candle-chart`, `order-book`, `order-form`, `bottom-tabs`, `status-footer`.                                                                                   |
+| **features** | `src/features/` | Пользовательские действия: `create-order`, `cancel-order`, `reset-account`.                                                                                                                |
+| **entities** | `src/entities/` | Бизнес-сущности с API и моделями: `balance`, `order`, `trade`, `trading-pair`, `ticker`, `kline`.                                                                                          |
+| **shared**   | `src/shared/`   | Переиспользуемые примитивы: `api/` (REST-клиент, query-keys, error-mapping), `ws/` (WebSocket-клиент, store, connection state), `lib/` (decimal, format, utils), `ui/` (shadcn-примитивы). |
 
 Правило импортов: слой может импортировать только из нижестоящих слоёв (app → pages → widgets → features → entities → shared). Внутри слоя слайсы изолированы — общий код выносится на уровень ниже.
 

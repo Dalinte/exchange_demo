@@ -9,11 +9,12 @@ export function CandleChart() {
   const symbol = useMarketStore((state) => state.symbol);
   const interval = useChartStore((state) => state.interval);
   const chartType = useChartStore((state) => state.chartType);
-  useKlineStream(symbol, interval);
   const { data: candles = [] } = useKlines(symbol, interval);
 
+  useKlineStream(symbol, interval);
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
+    <div className="flex flex-col flex-1 min-h-0">
       <ChartToolbar candles={candles} />
       <KlineChartView candles={candles} chartType={chartType} />
     </div>
