@@ -12,12 +12,14 @@ type MessageHandler = (message: WSMessage) => void;
 
 const MAX_RECONNECT_DELAY_MS = 30_000;
 const BASE_RECONNECT_DELAY_MS = 1_000;
+const PING_INTERVAL_MS = 5_000;
 
 class ExchangeWebSocketClient {
   private socket: WebSocket | null = null;
   private readonly messageHandlers = new Set<MessageHandler>();
   private readonly activeSubscriptions = new Set<string>();
   private reconnectAttempts = 0;
+  private pingTimer: ReturnType<typeof setInterval> | null = null;
 
   constructor(private readonly url: string) {}
 
@@ -37,6 +39,7 @@ class ExchangeWebSocketClient {
           channels: Array.from(this.activeSubscriptions),
         });
       }
+      this.startPingLoop();
     };
 
     socket.onmessage = (event) => {
@@ -52,6 +55,11 @@ class ExchangeWebSocketClient {
         console.warn('[ws] invalid message', parsed.error.issues);
         return;
       }
+      if (parsed.data.type === 'pong') {
+        const rtt = Date.now() - parsed.data.t;
+        useWsStore.getState().setLatency(rtt);
+        return;
+      }
       for (const handler of this.messageHandlers) handler(parsed.data);
     };
 
@@ -61,6 +69,8 @@ class ExchangeWebSocketClient {
 
     socket.onclose = () => {
       this.socket = null;
+      this.stopPingLoop();
+      useWsStore.getState().setLatency(null);
       this.setState('closed');
       this.scheduleReconnect();
     };
@@ -99,6 +109,21 @@ class ExchangeWebSocketClient {
 
   private setState(state: ConnectionState): void {
     useWsStore.getState().setConnectionState(state);
+  }
+
+  private startPingLoop(): void {
+    this.stopPingLoop();
+    this.pingTimer = setInterval(() => {
+      if (this.socket?.readyState !== WebSocket.OPEN) return;
+      this.sendRaw({ type: 'ping', t: Date.now() });
+    }, PING_INTERVAL_MS);
+  }
+
+  private stopPingLoop(): void {
+    if (this.pingTimer) {
+      clearInterval(this.pingTimer);
+      this.pingTimer = null;
+    }
   }
 
   private scheduleReconnect(): void {

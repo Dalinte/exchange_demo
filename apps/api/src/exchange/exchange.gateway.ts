@@ -184,15 +184,34 @@ export class ExchangeGateway
     }
 
     const msg = result.data;
+    const state = this.clients.get(client);
+    if (state) state.lastSeen = Date.now();
+
     if (msg.type === 'subscribe') {
       for (const channel of msg.channels) {
         this.addSubscription(client, channel);
       }
-    } else {
+      return;
+    }
+    if (msg.type === 'unsubscribe') {
       for (const channel of msg.channels) {
         this.removeSubscription(client, channel);
       }
+      return;
     }
+    this.sendPong(client, msg.t);
+  }
+
+  private sendPong(client: WebSocket, t: number): void {
+    if (client.readyState !== WebSocket.OPEN) return;
+    const validated = WSMessageSchema.safeParse({ type: 'pong', t });
+    if (!validated.success) {
+      this.logger.warn(
+        `Outgoing pong failed schema validation: ${validated.error.message}`,
+      );
+      return;
+    }
+    client.send(JSON.stringify(validated.data));
   }
 
   private addSubscription(client: WebSocket, channel: string): void {
