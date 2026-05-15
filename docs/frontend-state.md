@@ -5,14 +5,14 @@
 | Слой           | Что хранит                                                   | Кто пишет                                      |
 | -------------- | ------------------------------------------------------------ | ---------------------------------------------- |
 | TanStack Query | Server state (всё, что приходит по REST: балансы, ордера, тикеры, свечи) | `useQuery` хуки, мутации, WS-апдейтеры       |
-| Zustand        | Локальный UI state (`symbol`, `ws.state`, toasts)            | компоненты + sync-компоненты + WS-клиент       |
-| `useState`     | Эфемерное состояние одного компонента (`timeframe`, `presetPrice`, открытость модалок) | компоненты-владельцы                           |
+| Zustand        | Локальный UI state (`symbol`, `ws.state`, `chart.interval`)  | компоненты + sync-компоненты + WS-клиент       |
+| `useState`     | Эфемерное состояние одного компонента (`presetPrice`, открытость локальных модалок внутри фич) | компоненты-владельцы                           |
 
 React Context **не используется** — он даёт каскадные ре-рендеры по поддереву и плохо селективен (зафиксировано в [CLAUDE.md](../CLAUDE.md#состояние-и-data-layer)).
 
 ## TanStack Query — серверное состояние
 
-Единственный QueryClient создаётся в [`shared/providers/query-provider.tsx`](../apps/web/src/shared/providers/query-provider.tsx) и оборачивает всё приложение в `app/layout.tsx`. Дефолты на все запросы:
+Единственный QueryClient создаётся через фабрику в [`app/providers/query-client.ts`](../apps/web/src/app/providers/query-client.ts) и используется провайдером в [`app/providers/query-provider.tsx`](../apps/web/src/app/providers/query-provider.tsx), который оборачивает всё приложение в `app/layout.tsx`. Дефолты на все запросы:
 
 ```ts
 {
@@ -36,26 +36,26 @@ React Context **не используется** — он даёт каскадн
 
 ### Хуки `useXxx`
 
-Тонкие обёртки над `useQuery` лежат в [`shared/api/hooks/`](../apps/web/src/shared/api/hooks/). Каждая зовёт соответствующий API-клиент из `shared/api/<resource>.ts`, который делает `apiFetch` + `XxxSchema.parse(data)` — Zod-валидация на приёме, как и на сервере. Это защищает фронт от расхождения с View-схемой (см. [api-mappers.md](api-mappers.md)).
+Тонкие обёртки над `useQuery` лежат в `entities/<resource>/api/` (FSD entity-слой). Каждая зовёт соответствующий API-клиент из соседнего модуля, который делает `apiFetch` + `XxxSchema.parse(data)` — Zod-валидация на приёме, как и на сервере. Это защищает фронт от расхождения с View-схемой (см. [api-mappers.md](api-mappers.md)).
 
-Особый случай — [`useOrderHistory`](../apps/web/src/shared/api/hooks/use-orders.ts): дёргает **два** запроса (`FILLED` и `CANCELED`), сливает локально и сортирует по `createdAt desc`. Это потому что API сейчас принимает один `status` (см. [history.md](history.md)) — фильтрация "не PENDING" на сервере не поддерживается.
+Особый случай — [`useOrderHistory`](../apps/web/src/entities/order/api/use-orders.ts): дёргает **два** запроса (`FILLED` и `CANCELED`), сливает локально и сортирует по `createdAt desc`. Это потому что API сейчас принимает один `status` (см. [history.md](history.md)) — фильтрация "не PENDING" на сервере не поддерживается.
 
 ### Мутации и оптимистичные апдейты
 
-[`useCreateOrder`](../apps/web/src/shared/api/hooks/mutations/use-create-order.ts) — единственная сложная мутация в проекте. Паттерн TanStack Query "optimistic update with rollback":
+[`useCreateOrder`](../apps/web/src/features/create-order/api/use-create-order.ts) — единственная сложная мутация в проекте. Паттерн TanStack Query "optimistic update with rollback":
 
 1. `onMutate`:
    - `cancelQueries({ queryKey: ['balances', 'list'] })` — отменяет любые in-flight рефетчи балансов, чтобы они не перезаписали оптимистичный апдейт.
    - Снимает snapshot текущих балансов из кэша в `context.previousBalances`.
    - Берёт цену из текущего `tickers` кэша (`queryClient.getQueryData(queryKeys.tickers.list())`) — реализация оптимистичного списания без round-trip за ценой.
-   - Зовёт `applyOptimisticMarketOrder(balances, dto, ticker)` — он считает дельту в `decimal.js` и возвращает новый `BalanceMap` (см. [`shared/lib/optimistic-balance.ts`](../apps/web/src/shared/lib/optimistic-balance.ts)).
+   - Зовёт `applyOptimisticMarketOrder(balances, dto, ticker)` — он считает дельту в `decimal.js` и возвращает новый `BalanceMap` (см. [`features/create-order/lib/optimistic-balance.ts`](../apps/web/src/features/create-order/lib/optimistic-balance.ts)).
    - Кладёт результат в кэш `queryKeys.balances.list()`.
 2. `onError`: если сервер ответил ошибкой (`Insufficient balance`, `Price feed unavailable`, etc.) — откатывает кэш на `context.previousBalances`.
 3. `onSettled` (в любом исходе): инвалидирует `balances`, `orders`, `trades`. Сервер — источник истины, оптимистика — только для мгновенного отклика UI.
 
 Цена для оптимистики берётся из `tickers`-кэша, **а не из формы**. Если тикеров в кэше нет — оптимистика просто не применяется, мутация остаётся обычной (мы не угадываем).
 
-[`useResetAccount`](../apps/web/src/shared/api/hooks/mutations/use-reset-account.ts) — без оптимистики: на `onSuccess` зовёт `invalidateQueries()` без аргументов, что инвалидирует **весь** кэш. После reset балансы, ордера и сделки всё равно почти все пустые, дешевле всё перетянуть.
+[`useResetAccount`](../apps/web/src/features/reset-account/api/use-reset-account.ts) — без оптимистики: на `onSuccess` зовёт `invalidateQueries()` без аргументов, что инвалидирует **весь** кэш. После reset балансы, ордера и сделки всё равно почти все пустые, дешевле всё перетянуть.
 
 ### Что НЕ хранится в Query Cache
 
@@ -65,9 +65,11 @@ React Context **не используется** — он даёт каскадн
 
 ## Zustand — клиентское состояние
 
-Три стора, по одному файлу на каждый в [`shared/stores/`](../apps/web/src/shared/stores/). Все они "плоские" — без middleware, без persist, без selectors-хелперов. Если стор начнёт распухать, рефакторить в slice-pattern.
+Три стора, разнесены по FSD-слоям (entity/widget/shared) рядом со своими потребителями. Все они "плоские" — без middleware, без persist, без selectors-хелперов. Если стор начнёт распухать, рефакторить в slice-pattern.
 
 ### `market-store` — выбранный символ
+
+Живёт в [`entities/trading-pair/model/market-store.ts`](../apps/web/src/entities/trading-pair/model/market-store.ts):
 
 ```ts
 useMarketStore: { symbol: string; setSymbol: (s: string) => void }
@@ -77,11 +79,13 @@ useMarketStore: { symbol: string; setSymbol: (s: string) => void }
 
 - В серверном [`app/trade/[symbol]/page.tsx`](../apps/web/src/app/trade/[symbol]/page.tsx) символ из params передаётся в клиентский `<TradeTerminal initialSymbol={...} />`.
 - `TradeTerminal` синхронизирует стор лениво через `useState(() => { ... })` — выполняется один раз на маунт **до** первого render-цикла (классический трюк, чтобы избежать первого render'а со старым значением).
-- [`SymbolSync`](../apps/web/src/shared/stores/SymbolSync.tsx) — отдельный sync-компонент рядом со стором, читает `useParams()` и в `useEffect` пушит изменения в стор. Это страхует кейс, когда URL меняется без размонтирования `TradeTerminal` (клиентская навигация между парами).
+- [`SymbolSync`](../apps/web/src/entities/trading-pair/model/symbol-sync.tsx) — отдельный sync-компонент рядом со стором, читает `useParams()` и в `useEffect` пушит изменения в стор. Это страхует кейс, когда URL меняется без размонтирования `TradeTerminal` (клиентская навигация между парами).
 
 Принцип: **читать URL → писать в стор в ОДНОМ месте**. Каждый потребитель только подписан на стор, никто не дёргает `useParams()` сам (зафиксировано в [CLAUDE.md](../CLAUDE.md#состояние-и-data-layer)).
 
 ### `ws-store` — состояние WebSocket-соединения
+
+Живёт в [`shared/ws/ws-store.ts`](../apps/web/src/shared/ws/ws-store.ts):
 
 ```ts
 useWsStore: { state: 'connecting' | 'open' | 'closed' | 'reconnecting'; setConnectionState: ... }
@@ -91,27 +95,31 @@ useWsStore: { state: 'connecting' | 'open' | 'closed' | 'reconnecting'; setConne
 
 Читают — компоненты вроде `StatusFooter` через хук [`useConnectionState`](../apps/web/src/shared/ws/use-connection-state.ts).
 
-### `toast-store` — нотификации
+### `chart-store` — параметры графика
+
+Живёт в [`widgets/candle-chart/model/chart-store.ts`](../apps/web/src/widgets/candle-chart/model/chart-store.ts):
 
 ```ts
-useToastStore: { toasts: Toast[]; push(toast); dismiss(id) }
+useChartStore: {
+  interval: KlineInterval;            // '1m' | '5m' | '15m' | '1h' | …
+  chartType: 'candles' | 'bars' | 'line' | 'area';
+  setInterval(...); setChartType(...);
+}
 ```
 
-Особенности:
+Дефолт — `interval: '15m'`, `chartType: 'candles'`. Параметры выбранного графика касаются только виджета свечей, поэтому стор живёт в его слое. Читают: сам `CandleChart` + панель `ChartToolbar`. Хуки данных (`useKlines`, `useKlineStream`) получают `interval` как аргумент — стор тянет только UI-уровень.
 
-- `push` сам генерирует `id` (через `crypto.randomUUID()` с фолбэком на `Math.random` — на случай очень старых браузеров без `crypto.randomUUID`).
-- Авто-dismiss через 4 секунды. Таймеры живут в `Map<id, timeoutHandle>` **вне** стора — Zustand не любит non-serializable значения. `dismiss` чистит таймер перед удалением, чтобы избежать "dismiss × 2".
-- Удобный хук [`usePushToast`](../apps/web/src/shared/stores/toast-store.ts) — селектор только на `push`, чтобы компоненты, которые только пушат тосты, не ре-рендерились при изменении массива.
+### Тосты — `sonner`
+
+Тосты идут через библиотеку [`sonner`](https://sonner.emilkowal.ski/). В `TradeTerminal` рендерится единственный `<Toaster theme="light" position="top-right" />`, любой код зовёт `toast.success(...)` / `toast.error(...)` напрямую из `import { toast } from 'sonner'`. Своего стора и таймер-менеджмента у проекта нет — sonner всё это умеет сам.
 
 ## `useState` — эфемерное
 
-В [`TradeTerminal`](../apps/web/src/features/trade-terminal/TradeTerminal.tsx) живут:
+В [`TradeTerminal`](../apps/web/src/pages/trade/ui/trade-terminal.tsx) живёт `presetPrice` — цена, которую `OrderBook` пробрасывает в `OrderForm` при клике на строку стакана. После использования сбрасывается в `null`.
 
-- `timeframe` — текущий интервал графика (`'15m'`), прокидывается в `CandleChart` и обратно через колбэк.
-- `presetPrice` — цена, которую `OrderBook` пробрасывает в `OrderForm` при клике на строку стакана. После использования сбрасывается в `null`.
-- `resetOpen` — открыта ли модалка reset.
+Внутри отдельных фич локальное состояние живёт у самой фичи (FSD-encapsulation): например, `features/reset-account/ui/reset-account-button.tsx` сам владеет `isModalOpen` своей модалки и `features/select-trading-pair/ui/pair-picker.tsx` — `isOpen` своего popover'а. Снаружи это состояние не видно — фича отдаёт один готовый компонент, страница его рендерит без props-drilling.
 
-Это правильный уровень: тут нет смысла тащить в Zustand — все потребители в одном поддереве. Если когда-то понадобится открывать модалку из другого места (например, из меню в `TopBar` без props-drilling) — тогда вынесем в стор.
+Это правильный уровень: пока ни одно из таких состояний не нужно дёргать из другого поддерева — Zustand тут лишний. Если когда-то понадобится открывать модалку из другого места — поднимем в стор соответствующего слоя.
 
 ## WebSocket — отдельный канал данных
 
@@ -131,7 +139,7 @@ REST даёт snapshot (история свечей, текущие баланс
      - Иначе → добавляет новую свечу в конец, обрезает массив до `MAX_CANDLES = 500`.
 3. `CandleChart` подписан на тот же query key через `useKlines` → Lightweight Charts получает свежий массив и перерисовывает.
 
-То же самое для тикеров: [`useTickerStream`](../apps/web/src/shared/ws/use-ticker-stream.ts) патчит `queryKeys.tickers.list()`, обновляя `lastPrice`/`priceChangePercent24h`/`volume24h` для текущего символа в массиве.
+То же самое для тикеров: [`useTickerStream`](../apps/web/src/entities/ticker/api/use-ticker-stream.ts) патчит `queryKeys.tickers.list()`, обновляя `lastPrice`/`priceChangePercent24h`/`volume24h` для текущего символа в массиве.
 
 ### Реконнект
 
@@ -185,14 +193,17 @@ WS message "kline" → useKlineStream handler → queryClient.setQueryData(['kli
 
 ## Где это лежит
 
-- [`apps/web/src/shared/providers/query-provider.tsx`](../apps/web/src/shared/providers/query-provider.tsx) — единственный `QueryClient` с дефолтами.
-- [`apps/web/src/shared/api/`](../apps/web/src/shared/api/) — тонкие API-клиенты (`apiFetch` + Zod `.parse`).
-- [`apps/web/src/shared/api/hooks/`](../apps/web/src/shared/api/hooks/) — `useXxx` (queries) и `mutations/useXxx` (мутации).
+- [`apps/web/src/app/providers/query-client.ts`](../apps/web/src/app/providers/query-client.ts) — фабрика `QueryClient` с дефолтами (server/client разделены).
+- [`apps/web/src/app/providers/query-provider.tsx`](../apps/web/src/app/providers/query-provider.tsx) — провайдер, оборачивает дерево.
+- [`apps/web/src/shared/api/client.ts`](../apps/web/src/shared/api/client.ts) — `apiFetch` (общий transport).
 - [`apps/web/src/shared/api/query-keys.ts`](../apps/web/src/shared/api/query-keys.ts) — централизованные ключи.
-- [`apps/web/src/shared/stores/`](../apps/web/src/shared/stores/) — `market-store`, `ws-store`, `toast-store`, `SymbolSync.tsx`.
-- [`apps/web/src/shared/ws/client.ts`](../apps/web/src/shared/ws/client.ts) — singleton WS-клиент с реконнектом.
-- [`apps/web/src/shared/ws/use-kline-stream.ts`](../apps/web/src/shared/ws/use-kline-stream.ts), [`use-ticker-stream.ts`](../apps/web/src/shared/ws/use-ticker-stream.ts) — хуки, патчащие Query Cache.
-- [`apps/web/src/shared/lib/optimistic-balance.ts`](../apps/web/src/shared/lib/optimistic-balance.ts) — расчёт оптимистичной дельты.
+- [`apps/web/src/entities/<resource>/api/`](../apps/web/src/entities/) — тонкие API-клиенты + `useXxx` queries по ресурсу (`balance`, `kline`, `order`, `ticker`, `trade`, `trading-pair`).
+- [`apps/web/src/features/<action>/api/`](../apps/web/src/features/) — мутации по действиям (`create-order`, `cancel-order`, `reset-account`).
+- [`apps/web/src/features/create-order/lib/optimistic-balance.ts`](../apps/web/src/features/create-order/lib/optimistic-balance.ts) — расчёт оптимистичной дельты.
+- [`apps/web/src/entities/trading-pair/model/`](../apps/web/src/entities/trading-pair/model/) — `market-store.ts` + `symbol-sync.tsx`.
+- [`apps/web/src/shared/ws/`](../apps/web/src/shared/ws/) — singleton WS-клиент (`client.ts`), `ws-store.ts`, `use-connection-state.ts`.
+- [`apps/web/src/entities/kline/api/use-kline-stream.ts`](../apps/web/src/entities/kline/api/use-kline-stream.ts), [`entities/ticker/api/use-ticker-stream.ts`](../apps/web/src/entities/ticker/api/use-ticker-stream.ts) — хуки, патчащие Query Cache из WS.
+- [`apps/web/src/widgets/candle-chart/model/chart-store.ts`](../apps/web/src/widgets/candle-chart/model/chart-store.ts) — параметры графика (interval, chartType).
 
 ## Известные ограничения
 
@@ -203,4 +214,3 @@ WS message "kline" → useKlineStream handler → queryClient.setQueryData(['kli
 - **`useResetAccount` инвалидирует весь кэш.** Безопасно (после reset почти всё пустое), но если кэш разрастётся — это станет дороже. Тогда — точечная инвалидация только релевантных ключей.
 - **WS-канала для собственных ордеров/балансов нет.** После мутаций фронт делает REST refetch через `invalidateQueries`. `OrderUpdateSchema` и `BalanceUpdateSchema` в `@exchange/shared` существуют — gateway пока их не публикует (см. [realtime.md](realtime.md)).
 - **WS-апдейтер в `useKlineStream` теряет `quoteVolume` и `trades` для новых свечей.** Ставит их в `'0'` и `0` соответственно — серверный `kline`-payload не содержит этих полей, они приходят только из REST `/klines`. При обновлении последней свечи поля не трогаются, остаются от первоначального REST-снапшота.
-- **Toast-таймеры — глобальный `Map`.** При HMR в дев-режиме модуль перезагрузится, но `Map` пересоздастся пустой, а старые таймеры останутся висеть в памяти и дёрнут уже несуществующий `dismiss`. На проде неактуально.
