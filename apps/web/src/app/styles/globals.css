@@ -426,20 +426,6 @@ button {
   letter-spacing: 0.04em;
 }
 
-/* Logo dot */
-.logo-mark {
-  width: 22px;
-  height: 22px;
-  background: linear-gradient(135deg, var(--brand-2), var(--brand));
-  border-radius: 4px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  color: #181a20;
-  font-weight: 800;
-  font-size: 13px;
-}
-
 /* Search */
 .search-wrap {
   position: relative;

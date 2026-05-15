@@ -7,6 +7,7 @@ import { useBalances, calculateTotalEquityUsdt } from '@/entities/balance';
 import { useTickers, TickerSubscription } from '@/entities/ticker';
 import { useMarketStore, formatPairDisplay } from '@/entities/trading-pair';
 import { formatDecimal, formatPrice, formatSignedPercent } from '@/shared/lib/format';
+import { Brand } from './brand';
 
 interface TopBarProps {
   onReset: () => void;
@@ -49,11 +50,7 @@ export function TopBar({ onReset }: TopBarProps) {
 
   return (
     <div className="flex items-center h-[60px] shrink-0 px-4 border-b border-border bg-bg-1">
-      <div className="flex items-center gap-3 shrink-0">
-        <span className="logo-mark">D</span>
-        <span className="text-[15px] font-bold tracking-tight">Demo Exchange</span>
-        <span className="badge">PAPER</span>
-      </div>
+      <Brand />
 
       <div className="w-px h-8 bg-border mx-4" />
 
