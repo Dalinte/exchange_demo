@@ -1,6 +1,6 @@
 {
   "name": "demo-exchange",
-  "version": "0.0.0",
+  "version": "0.1.1",
   "private": true,
   "description": "Cryptocurrency exchange with paper trading, no registration.",
   "workspaces": [
@@ -32,11 +32,13 @@
     "db:seed": "npm run prisma:seed --workspace=api",
     "db:studio": "npm run prisma:studio --workspace=api",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "prepare": "husky"
   },
   "devDependencies": {
     "@types/node": "^25.6.0",
     "concurrently": "^9.2.1",
+    "husky": "^9.1.7",
     "prettier": "^3.8.3",
     "typescript": "^6.0.3"
   }

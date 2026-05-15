@@ -44,7 +44,7 @@ export function StatusFooter() {
         <span className="text-text-1">{utc}</span>
       </Item>
       <Item>
-        <span>v1.0.0-demo</span>
+        <span>v{process.env.APP_VERSION}</span>
       </Item>
 
       <div className="flex-1" />
