@@ -1,2 +1,1 @@
-export { ResetModal } from './ui/reset-modal';
-export { useResetAccount } from './api/use-reset-account';
+export { ResetAccountButton } from './ui/reset-account-button';

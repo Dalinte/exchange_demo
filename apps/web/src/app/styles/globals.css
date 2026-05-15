@@ -169,34 +169,6 @@ button {
   border-radius: 2px;
 }
 
-/* Buttons */
-.btn {
-  height: 32px;
-  padding: 0 12px;
-  background: var(--bg-3);
-  border: 1px solid var(--border);
-  color: var(--text-0);
-  border-radius: 4px;
-  font-size: var(--fs-body);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-}
-.btn:hover {
-  background: var(--bg-hover);
-  border-color: var(--border-strong);
-}
-.btn-ghost {
-  background: transparent;
-  border-color: var(--border);
-  color: var(--text-1);
-}
-.btn-ghost:hover {
-  color: var(--text-0);
-  background: var(--bg-2);
-}
-
 /* Inputs */
 .field {
   width: 100%;

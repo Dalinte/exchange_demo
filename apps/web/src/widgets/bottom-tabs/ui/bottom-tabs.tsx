@@ -9,6 +9,7 @@ import { useTickers } from '@/entities/ticker';
 import { useTradeHistory } from '@/entities/trade';
 import { useCancelOrder } from '@/features/cancel-order';
 import { parseApiError } from '@/shared/api/api-error';
+import { Button } from '@/shared/ui/button';
 import { formatDecimal, formatPrice, formatTime } from '@/shared/lib/format';
 
 type TabId = 'open' | 'history' | 'trades' | 'balances';
@@ -103,8 +104,9 @@ function OpenOrders({
               <td className="mono right text-text-2">{formatDecimal(order.filledQuantity, 6)}</td>
               <td className="mono right">{formatDecimal(order.total, 2)}</td>
               <td className="right">
-                <button
-                  className="btn btn-ghost h-6 px-2 text-[11px]"
+                <Button
+                  variant="outline"
+                  size="xs"
                   disabled={isCancelling}
                   onClick={() =>
                     cancelOrder.mutate(order.id, {
@@ -114,7 +116,7 @@ function OpenOrders({
                   }
                 >
                   Cancel
-                </button>
+                </Button>
               </td>
             </tr>
           );

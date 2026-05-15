@@ -3,6 +3,7 @@
 import { toast } from 'sonner';
 import { useResetAccount } from '../api/use-reset-account';
 import { parseApiError } from '@/shared/api/api-error';
+import { Button } from '@/shared/ui/button';
 
 interface ResetModalProps {
   onClose: () => void;
@@ -26,11 +27,17 @@ export function ResetModal({ onClose }: ResetModalProps) {
           cannot be undone.
         </div>
         <div className="flex justify-end gap-2">
-          <button className="btn btn-ghost" onClick={onClose} disabled={resetAccount.isPending}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onClose}
+            disabled={resetAccount.isPending}
+          >
             Cancel
-          </button>
-          <button
-            className="btn bg-down border-down text-white disabled:opacity-60"
+          </Button>
+          <Button
+            variant="destructive"
+            size="sm"
             onClick={() =>
               resetAccount.mutate(undefined, {
                 onSuccess: () => {
@@ -43,7 +50,7 @@ export function ResetModal({ onClose }: ResetModalProps) {
             disabled={resetAccount.isPending}
           >
             {resetAccount.isPending ? 'Resetting…' : 'Reset Account'}
-          </button>
+          </Button>
         </div>
       </div>
     </div>

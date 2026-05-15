@@ -8,7 +8,6 @@ import { OrderBook } from '@/widgets/order-book';
 import { OrderForm } from '@/widgets/order-form';
 import { StatusFooter } from '@/widgets/status-footer';
 import { TopBar } from '@/widgets/top-bar';
-import { ResetModal } from '@/features/reset-account';
 import { SymbolSync, useMarketStore } from '@/entities/trading-pair';
 
 interface TradeTerminalProps {
@@ -24,12 +23,11 @@ export function TradeTerminal({ initialSymbol }: TradeTerminalProps) {
   });
 
   const [presetPrice, setPresetPrice] = useState<string | null>(null);
-  const [resetOpen, setResetOpen] = useState(false);
 
   return (
     <div className="h-full flex flex-col">
       <SymbolSync />
-      <TopBar onReset={() => setResetOpen(true)} />
+      <TopBar />
 
       <div className="flex-1 flex min-h-0 overflow-hidden">
         <div className="flex-1 flex flex-col min-w-0 min-h-0">
@@ -45,7 +43,6 @@ export function TradeTerminal({ initialSymbol }: TradeTerminalProps) {
         <OrderForm presetPrice={presetPrice} onPresetConsumed={() => setPresetPrice(null)} />
       </div>
 
-      {resetOpen && <ResetModal onClose={() => setResetOpen(false)} />}
       <Toaster theme="light" position="top-right" />
 
       <StatusFooter />
