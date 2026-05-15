@@ -1,1 +1,1 @@
-export { TradeTerminal } from './ui/TradeTerminal';
+export { TradeTerminal } from './ui/trade-terminal';

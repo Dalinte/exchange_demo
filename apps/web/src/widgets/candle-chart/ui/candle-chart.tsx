@@ -3,7 +3,7 @@
 import { KlineChartView, useKlineStream, useKlines } from '@/entities/kline';
 import { useMarketStore } from '@/entities/trading-pair';
 import { useChartStore } from '../model/chart-store';
-import { ChartToolbar } from './ChartToolbar';
+import { ChartToolbar } from './chart-toolbar';
 
 export function CandleChart() {
   const symbol = useMarketStore((state) => state.symbol);

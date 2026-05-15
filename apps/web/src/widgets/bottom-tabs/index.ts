@@ -1,1 +1,1 @@
-export { BottomTabs } from './ui/BottomTabs';
+export { BottomTabs } from './ui/bottom-tabs';

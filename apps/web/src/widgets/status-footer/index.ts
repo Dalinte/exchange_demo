@@ -1,1 +1,1 @@
-export { StatusFooter } from './ui/StatusFooter';
+export { StatusFooter } from './ui/status-footer';

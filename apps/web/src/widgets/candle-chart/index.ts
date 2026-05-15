@@ -1,1 +1,1 @@
-export { CandleChart } from './ui/CandleChart';
+export { CandleChart } from './ui/candle-chart';
