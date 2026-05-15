@@ -60,6 +60,10 @@ class ExchangeWebSocketClient {
         useWsStore.getState().setLatency(rtt);
         return;
       }
+      if (parsed.data.type === 'upstream_status') {
+        useWsStore.getState().setUpstreamConnected(parsed.data.connected);
+        return;
+      }
       for (const handler of this.messageHandlers) handler(parsed.data);
     };
 
@@ -70,7 +74,9 @@ class ExchangeWebSocketClient {
     socket.onclose = () => {
       this.socket = null;
       this.stopPingLoop();
-      useWsStore.getState().setLatency(null);
+      const store = useWsStore.getState();
+      store.setLatency(null);
+      store.setUpstreamConnected(null);
       this.setState('closed');
       this.scheduleReconnect();
     };

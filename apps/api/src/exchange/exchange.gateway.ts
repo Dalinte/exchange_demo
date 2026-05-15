@@ -71,6 +71,7 @@ export class ExchangeGateway
   private readonly ipConnections = new Map<string, number>();
   private activeSymbols = new Set<string>();
   private heartbeatTimer: NodeJS.Timeout | null = null;
+  private unsubscribeUpstreamStatus: (() => void) | null = null;
 
   @WebSocketServer()
   private server!: WsServer;
@@ -86,6 +87,9 @@ export class ExchangeGateway
     this.logger.log(
       `Loaded ${this.activeSymbols.size} active trading symbols for WS validation`,
     );
+    this.unsubscribeUpstreamStatus = this.binanceStream.onStatusChange(
+      (connected) => this.broadcastUpstreamStatus(connected),
+    );
   }
 
   afterInit(): void {
@@ -97,6 +101,10 @@ export class ExchangeGateway
     if (this.heartbeatTimer) {
       clearInterval(this.heartbeatTimer);
       this.heartbeatTimer = null;
+    }
+    if (this.unsubscribeUpstreamStatus) {
+      this.unsubscribeUpstreamStatus();
+      this.unsubscribeUpstreamStatus = null;
     }
     for (const client of this.clients.keys()) {
       try {
@@ -133,6 +141,8 @@ export class ExchangeGateway
     client.on('error', (err) => {
       this.logger.warn(`Client WS error from ${ip}: ${err.message}`);
     });
+
+    this.sendUpstreamStatus(client, this.binanceStream.isConnected);
   }
 
   handleDisconnect(client: WebSocket): void {
@@ -280,6 +290,27 @@ export class ExchangeGateway
       return;
     }
 
+    client.send(JSON.stringify(validated.data));
+  }
+
+  private broadcastUpstreamStatus(connected: boolean): void {
+    for (const client of this.clients.keys()) {
+      this.sendUpstreamStatus(client, connected);
+    }
+  }
+
+  private sendUpstreamStatus(client: WebSocket, connected: boolean): void {
+    if (client.readyState !== WebSocket.OPEN) return;
+    const validated = WSMessageSchema.safeParse({
+      type: 'upstream_status',
+      connected,
+    });
+    if (!validated.success) {
+      this.logger.warn(
+        `Outgoing upstream_status failed schema validation: ${validated.error.message}`,
+      );
+      return;
+    }
     client.send(JSON.stringify(validated.data));
   }
 

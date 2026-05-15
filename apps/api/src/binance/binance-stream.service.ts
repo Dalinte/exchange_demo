@@ -9,8 +9,11 @@ import { type RawData, WebSocket } from 'ws';
 const BINANCE_COMBINED_URL = 'wss://stream.binance.com:9443/stream';
 const MAX_RECONNECT_DELAY_MS = 30_000;
 const BASE_RECONNECT_DELAY_MS = 1_000;
+const RATE_LIMITED_MIN_DELAY_MS = 5_000;
+const RATE_LIMITED_CLOSE_CODE = 1008;
 
 export type BinanceStreamCallback = (payload: unknown) => void;
+export type UpstreamStatusCallback = (connected: boolean) => void;
 
 function rawDataToString(raw: RawData): string {
   if (Array.isArray(raw)) return Buffer.concat(raw).toString('utf8');
@@ -38,12 +41,15 @@ function isCombinedStreamMessage(
 export class BinanceStreamService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(BinanceStreamService.name);
   private readonly subscribers = new Map<string, Set<BinanceStreamCallback>>();
+  private readonly statusListeners = new Set<UpstreamStatusCallback>();
 
   private ws: WebSocket | null = null;
   private reconnectAttempt = 0;
   private nextRequestId = 1;
   private destroyed = false;
   private reconnectTimer: NodeJS.Timeout | null = null;
+  private rateLimited = false;
+  private upstreamConnected = false;
 
   onModuleInit(): void {
     this.connect();
@@ -92,8 +98,29 @@ export class BinanceStreamService implements OnModuleInit, OnModuleDestroy {
     return this.isOpen();
   }
 
+  onStatusChange(callback: UpstreamStatusCallback): () => void {
+    this.statusListeners.add(callback);
+    return () => {
+      this.statusListeners.delete(callback);
+    };
+  }
+
   private isOpen(): boolean {
     return this.ws !== null && this.ws.readyState === WebSocket.OPEN;
+  }
+
+  private setUpstreamConnected(connected: boolean): void {
+    if (this.upstreamConnected === connected) return;
+    this.upstreamConnected = connected;
+    for (const listener of this.statusListeners) {
+      try {
+        listener(connected);
+      } catch (err) {
+        this.logger.error(
+          `Upstream status listener threw: ${(err as Error).message}`,
+        );
+      }
+    }
   }
 
   private sendControl(
@@ -116,7 +143,9 @@ export class BinanceStreamService implements OnModuleInit, OnModuleDestroy {
 
     ws.on('open', () => {
       this.reconnectAttempt = 0;
+      this.rateLimited = false;
       this.logger.log('Connected to Binance combined streams');
+      this.setUpstreamConnected(true);
       const activeStreams = [...this.subscribers.keys()];
       if (activeStreams.length > 0) {
         this.logger.log(
@@ -138,7 +167,14 @@ export class BinanceStreamService implements OnModuleInit, OnModuleDestroy {
       this.logger.warn(
         `Binance WS closed (code=${code}, reason=${reason.toString() || 'n/a'})`,
       );
+      if (code === RATE_LIMITED_CLOSE_CODE) {
+        this.rateLimited = true;
+        this.logger.warn(
+          'Binance rate-limited this connection, backing off before reconnect',
+        );
+      }
       this.ws = null;
+      this.setUpstreamConnected(false);
       this.scheduleReconnect();
     });
   }
@@ -182,10 +218,15 @@ export class BinanceStreamService implements OnModuleInit, OnModuleDestroy {
 
   private scheduleReconnect(): void {
     if (this.destroyed) return;
-    const delay = Math.min(
+    const exponential = Math.min(
       BASE_RECONNECT_DELAY_MS * 2 ** this.reconnectAttempt,
       MAX_RECONNECT_DELAY_MS,
     );
+    const floor = this.rateLimited ? RATE_LIMITED_MIN_DELAY_MS : 0;
+    const base = Math.max(exponential, floor);
+    // equal jitter: half deterministic, half random — keeps backoff growth predictable
+    // while desynchronising retries across instances
+    const delay = Math.round(base / 2 + Math.random() * (base / 2));
     this.reconnectAttempt++;
     this.logger.log(
       `Reconnecting to Binance in ${delay}ms (attempt ${this.reconnectAttempt})`,

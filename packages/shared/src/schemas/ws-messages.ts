@@ -48,6 +48,11 @@ export const PongMessageSchema = z.object({
   t: z.number().int(),
 });
 
+export const UpstreamStatusSchema = z.object({
+  type: z.literal('upstream_status'),
+  connected: z.boolean(),
+});
+
 export const WSMessageSchema = z.discriminatedUnion('type', [
   KlineUpdateSchema,
   TickerUpdateSchema,
@@ -55,6 +60,7 @@ export const WSMessageSchema = z.discriminatedUnion('type', [
   BalanceUpdateSchema,
   WSErrorMessageSchema,
   PongMessageSchema,
+  UpstreamStatusSchema,
 ]);
 
 export type KlineUpdate = z.infer<typeof KlineUpdateSchema>;
@@ -63,4 +69,5 @@ export type OrderUpdate = z.infer<typeof OrderUpdateSchema>;
 export type BalanceUpdate = z.infer<typeof BalanceUpdateSchema>;
 export type WSErrorMessage = z.infer<typeof WSErrorMessageSchema>;
 export type PongMessage = z.infer<typeof PongMessageSchema>;
+export type UpstreamStatus = z.infer<typeof UpstreamStatusSchema>;
 export type WSMessage = z.infer<typeof WSMessageSchema>;
