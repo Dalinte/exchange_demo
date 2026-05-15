@@ -41,7 +41,6 @@
   --color-down: var(--down);
   --color-down-bg: var(--down-bg);
   --color-brand: var(--brand);
-  --color-brand-2: var(--brand-2);
   --color-accent-line: var(--accent);
   --color-border-strong: var(--border-strong);
 }
@@ -261,30 +260,6 @@ button {
   border: 1px solid var(--border);
 }
 
-/* Flash on price update */
-@keyframes flashUp {
-  0% {
-    background: var(--up-bg);
-  }
-  100% {
-    background: transparent;
-  }
-}
-@keyframes flashDown {
-  0% {
-    background: var(--down-bg);
-  }
-  100% {
-    background: transparent;
-  }
-}
-.flash-up {
-  animation: flashUp 600ms ease-out;
-}
-.flash-down {
-  animation: flashDown 600ms ease-out;
-}
-
 /* Slider (percent buttons row) */
 .pct-track {
   position: relative;
@@ -327,10 +302,6 @@ button {
   cursor: default;
 }
 .pct-stop:hover {
-  border-color: var(--accent);
-}
-.pct-stop.reached {
-  background: var(--accent);
   border-color: var(--accent);
 }
 .pct-label {
@@ -397,32 +368,6 @@ button {
   background: var(--bg-3);
 }
 
-/* segmented */
-.seg {
-  display: inline-flex;
-  background: var(--bg-2);
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  padding: 2px;
-  gap: 2px;
-}
-.seg button {
-  background: transparent;
-  border: 0;
-  color: var(--text-2);
-  font-size: var(--fs-label);
-  padding: 4px 10px;
-  height: 24px;
-  border-radius: 3px;
-}
-.seg button.active {
-  background: var(--bg-hover);
-  color: var(--text-0);
-}
-.seg button:hover:not(.active) {
-  color: var(--text-0);
-}
-
 /* table */
 .tbl {
   width: 100%;
@@ -480,30 +425,6 @@ button {
   font-weight: 700;
   letter-spacing: 0.04em;
 }
-.badge-soft {
-  background: rgba(240, 185, 11, 0.15);
-  color: var(--brand-2);
-  border: 1px solid rgba(240, 185, 11, 0.3);
-}
-
-.pill {
-  display: inline-flex;
-  align-items: center;
-  padding: 2px 6px;
-  border-radius: 3px;
-  font-size: 11px;
-  font-weight: 500;
-  font-family: var(--font-mono), monospace;
-  font-variant-numeric: tabular-nums;
-}
-.pill.up {
-  background: var(--up-bg);
-  color: var(--up);
-}
-.pill.down {
-  background: var(--down-bg);
-  color: var(--down);
-}
 
 /* Logo dot */
 .logo-mark {
@@ -554,10 +475,4 @@ button {
   padding: 24px;
   width: 380px;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
-}
-
-/* Disable text selection on chrome */
-.no-select {
-  user-select: none;
-  -webkit-user-select: none;
 }
