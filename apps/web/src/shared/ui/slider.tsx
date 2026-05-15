@@ -13,15 +13,7 @@ function Slider({
   max = 100,
   ...props
 }: React.ComponentProps<typeof SliderPrimitive.Root>) {
-  const values = React.useMemo(
-    () =>
-      Array.isArray(value)
-        ? value
-        : Array.isArray(defaultValue)
-          ? defaultValue
-          : [min, max],
-    [value, defaultValue, min, max],
-  );
+  const thumbCount = (value ?? defaultValue ?? [min, max]).length;
 
   return (
     <SliderPrimitive.Root
@@ -45,7 +37,7 @@ function Slider({
           className="absolute h-full bg-accent-line"
         />
       </SliderPrimitive.Track>
-      {Array.from({ length: values.length }, (_, index) => (
+      {Array.from({ length: thumbCount }, (_, index) => (
         <SliderPrimitive.Thumb
           data-slot="slider-thumb"
           key={index}

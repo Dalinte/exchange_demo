@@ -23,8 +23,6 @@ export function TradeTerminal({ initialSymbol }: TradeTerminalProps) {
     return true;
   });
 
-  const [presetPrice, setPresetPrice] = useState<string | null>(null);
-
   return (
     <div className="h-full flex flex-col">
       <SymbolSync />
@@ -37,12 +35,12 @@ export function TradeTerminal({ initialSymbol }: TradeTerminalProps) {
             <div className="flex-1 flex flex-col min-w-0 min-h-0">
               <CandleChart />
             </div>
-            <OrderBook onPriceClick={setPresetPrice} />
+            <OrderBook />
           </div>
           <BottomTabs />
         </div>
 
-        <OrderForm presetPrice={presetPrice} onPresetConsumed={() => setPresetPrice(null)} />
+        <OrderForm />
       </div>
 
       <Toaster theme="light" position="top-right" />

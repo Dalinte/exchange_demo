@@ -7,11 +7,7 @@ import { formatPrice } from '@/shared/lib/format';
 import { genOrderBook } from '@/widgets/order-book/lib/generate-mock-book';
 import type { OrderBookLevel, OrderBookSnapshot } from '@/widgets/order-book/lib/types';
 
-interface OrderBookProps {
-  onPriceClick?: (price: string) => void;
-}
-
-export function OrderBook({ onPriceClick }: OrderBookProps) {
+export function OrderBook() {
   const symbol = useMarketStore((s) => s.symbol);
   const { data: tickers } = useTickers();
   const ticker = tickers?.find((t) => t.symbol === symbol);
@@ -50,10 +46,7 @@ export function OrderBook({ onPriceClick }: OrderBookProps) {
   function Row({ row, side }: { row: OrderBookLevel; side: 'ask' | 'bid' }) {
     const percent = (row.cum / maxCum) * 100;
     return (
-      <div
-        className="ob-row relative grid grid-cols-3 items-center px-3 h-5 text-[11px] mono cursor-default"
-        onClick={() => onPriceClick && onPriceClick(String(row.price))}
-      >
+      <div className="ob-row relative grid grid-cols-3 items-center px-3 h-5 text-[11px] mono">
         <div
           className={
             'absolute right-0 top-0 bottom-0 pointer-events-none ' +

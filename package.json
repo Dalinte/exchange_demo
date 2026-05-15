@@ -1,6 +1,6 @@
 {
   "name": "demo-exchange",
-  "version": "0.1.9",
+  "version": "0.1.10",
   "private": true,
   "description": "Cryptocurrency exchange with paper trading, no registration.",
   "workspaces": [

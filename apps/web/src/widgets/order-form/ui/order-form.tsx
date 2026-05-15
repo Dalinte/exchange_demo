@@ -1,7 +1,7 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { type ReactNode, useEffect, useState } from 'react';
+import { type ReactNode, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { z } from 'zod';
@@ -10,14 +10,9 @@ import { useTickers } from '@/entities/ticker';
 import { useTradingPairs, useMarketStore } from '@/entities/trading-pair';
 import { useCreateOrder } from '@/features/create-order';
 import { parseApiError } from '@/shared/api/api-error';
-import { Decimal, toFixedDown } from '@/shared/lib/decimal';
+import { Decimal, safeDecimal, toFixedDown } from '@/shared/lib/decimal';
 import { formatDecimal, formatPrice } from '@/shared/lib/format';
 import { Slider } from '@/shared/ui/slider';
-
-interface OrderFormProps {
-  presetPrice: string | null;
-  onPresetConsumed: () => void;
-}
 
 const formSchema = z.object({
   side: z.enum(['BUY', 'SELL']),
@@ -27,7 +22,9 @@ const formSchema = z.object({
 });
 type FormValues = z.infer<typeof formSchema>;
 
-export function OrderForm({ presetPrice, onPresetConsumed }: OrderFormProps) {
+const STOPS = [0, 25, 50, 75, 100];
+
+export function OrderForm() {
   const symbol = useMarketStore((s) => s.symbol);
   const { data: tickers } = useTickers();
   const { data: balances } = useBalances();
@@ -54,58 +51,42 @@ export function OrderForm({ presetPrice, onPresetConsumed }: OrderFormProps) {
   const quantity = watch('quantity');
   const price = watch('price') ?? '';
 
-  const [percent, setPercent] = useState(0);
-
   const createOrder = useCreateOrder();
 
   useEffect(() => {
     reset({ side, type, quantity: '', price: currentPrice });
-    setPercent(0);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [symbol]);
-
-  useEffect(() => {
-    if (presetPrice != null) {
-      setValue('type', 'LIMIT');
-      setValue('price', presetPrice);
-      onPresetConsumed();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [presetPrice]);
 
   const effectivePrice = type === 'MARKET' ? currentPrice : price || '0';
   const priceDecimal = safeDecimal(effectivePrice);
   const amountDecimal = safeDecimal(quantity);
   const totalDecimal = amountDecimal.mul(priceDecimal);
 
-  const tooMuch =
-    side === 'BUY'
-      ? totalDecimal.gt(safeDecimal(availableQuote))
-      : amountDecimal.gt(safeDecimal(availableBase));
+  const availableDecimal =
+    side === 'BUY' ? safeDecimal(availableQuote) : safeDecimal(availableBase);
+  const usedDecimal = side === 'BUY' ? totalDecimal : amountDecimal;
+  const percent = availableDecimal.gt(0)
+    ? Math.min(100, Math.round(usedDecimal.div(availableDecimal).mul(100).toNumber()))
+    : 0;
+
+  const tooMuch = usedDecimal.gt(availableDecimal);
   const limitUnsupported = type === 'LIMIT';
   const disabled =
     createOrder.isPending || amountDecimal.lte(0) || tooMuch || !ticker || limitUnsupported;
 
   function applyPercent(nextPercent: number) {
-    setPercent(nextPercent);
     const fraction = new Decimal(nextPercent).div(100);
-    let newAmount: Decimal;
-    if (side === 'BUY') {
-      const divisor = priceDecimal.gt(0) ? priceDecimal : new Decimal(1);
-      newAmount = safeDecimal(availableQuote).mul(fraction).div(divisor);
-    } else {
-      newAmount = safeDecimal(availableBase).mul(fraction);
-    }
-    setValue('quantity', toFixedDown(newAmount, quantityPrecision), { shouldValidate: true });
-  }
-
-  function handleAmount(value: string) {
-    setValue('quantity', value, { shouldValidate: true });
-    setPercent(0);
+    const newAmount =
+      side === 'BUY'
+        ? safeDecimal(availableQuote)
+            .mul(fraction)
+            .div(priceDecimal.gt(0) ? priceDecimal : new Decimal(1))
+        : safeDecimal(availableBase).mul(fraction);
+    setValue('quantity', toFixedDown(newAmount, quantityPrecision), { shouldValidate: false });
   }
 
   function handleTotal(value: string) {
-    setPercent(0);
     if (!priceDecimal.gt(0)) {
       setValue('quantity', '', { shouldValidate: true });
       return;
@@ -131,7 +112,6 @@ export function OrderForm({ presetPrice, onPresetConsumed }: OrderFormProps) {
             toast(title, { description, className: 'toast-sell' });
           }
           reset({ side: values.side, type: 'MARKET', quantity: '', price: currentPrice });
-          setPercent(0);
         },
         onError: (error) => {
           toast.error(parseApiError(error));
@@ -146,7 +126,6 @@ export function OrderForm({ presetPrice, onPresetConsumed }: OrderFormProps) {
       : `${formatDecimal(availableBase, 6)} ${baseAsset || ''}`.trim();
 
   const totalDisplay = totalDecimal.gt(0) ? totalDecimal.toFixed(pricePrecision) : '';
-  const stops = [0, 25, 50, 75, 100];
 
   return (
     <div className="flex flex-col w-80 shrink-0 gap-3 p-3 overflow-y-auto border-l border-border bg-bg-1">
@@ -187,7 +166,7 @@ export function OrderForm({ presetPrice, onPresetConsumed }: OrderFormProps) {
         <button
           type="button"
           onClick={() => applyPercent(100)}
-          className="mono text-text-1 hover:text-text-0 hover:underline underline-offset-2 disabled:cursor-not-allowed disabled:hover:no-underline disabled:hover:text-text-1"
+          className="mono text-text-1 hover:text-text-0 hover:underline underline-offset-2 disabled:cursor-not-allowed"
           disabled={!ticker}
           title="Use full available balance"
         >
@@ -202,16 +181,21 @@ export function OrderForm({ presetPrice, onPresetConsumed }: OrderFormProps) {
       )}
 
       {type === 'MARKET' && (
-        <div className="rounded-sm border border-dashed border-border bg-bg-2 px-2.5 py-2 text-[11px] text-text-2 text-center">
+        <HintBox>
           Will execute at market price{' '}
           <span className="mono text-text-0">
             ~ {formatPrice(currentPrice)} {quoteAsset}
           </span>
-        </div>
+        </HintBox>
       )}
 
       <FormRow label="Amount">
-        <FieldNum value={quantity} onChange={handleAmount} unit={baseAsset} placeholder="0.00" />
+        <FieldNum
+          value={quantity}
+          onChange={(v) => setValue('quantity', v, { shouldValidate: true })}
+          unit={baseAsset}
+          placeholder="0.00"
+        />
       </FormRow>
 
       <div className="px-1 pt-2 pb-1">
@@ -223,7 +207,7 @@ export function OrderForm({ presetPrice, onPresetConsumed }: OrderFormProps) {
           onValueChange={([next]) => applyPercent(next ?? 0)}
         />
         <div className="relative mt-3 h-3">
-          {stops.map((stop) => (
+          {STOPS.map((stop) => (
             <button
               key={stop}
               type="button"
@@ -253,10 +237,10 @@ export function OrderForm({ presetPrice, onPresetConsumed }: OrderFormProps) {
       )}
 
       {limitUnsupported && (
-        <div className="rounded-sm border border-dashed border-border bg-bg-2 px-2.5 py-2 text-[11px] text-text-2 text-center">
+        <HintBox>
           Limit orders are not supported yet — please use <span className="text-text-0">Market</span>
           .
-        </div>
+        </HintBox>
       )}
 
       <button
@@ -281,13 +265,12 @@ export function OrderForm({ presetPrice, onPresetConsumed }: OrderFormProps) {
   );
 }
 
-function safeDecimal(value: string): Decimal {
-  if (!value) return new Decimal(0);
-  try {
-    return new Decimal(value);
-  } catch {
-    return new Decimal(0);
-  }
+function HintBox({ children }: { children: ReactNode }) {
+  return (
+    <div className="rounded-sm border border-dashed border-border bg-bg-2 px-2.5 py-2 text-[11px] text-text-2 text-center">
+      {children}
+    </div>
+  );
 }
 
 interface FormRowProps {
