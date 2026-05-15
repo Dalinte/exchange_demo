@@ -12,6 +12,7 @@ import { useCreateOrder } from '@/features/create-order';
 import { parseApiError } from '@/shared/api/api-error';
 import { Decimal, toFixedDown } from '@/shared/lib/decimal';
 import { formatDecimal, formatPrice } from '@/shared/lib/format';
+import { Slider } from '@/shared/ui/slider';
 
 interface OrderFormProps {
   presetPrice: string | null;
@@ -44,7 +45,7 @@ export function OrderForm({ presetPrice, onPresetConsumed }: OrderFormProps) {
 
   const { watch, setValue, handleSubmit, reset } = useForm<FormValues>({
     resolver: zodResolver(formSchema),
-    defaultValues: { side: 'BUY', type: 'LIMIT', quantity: '', price: currentPrice },
+    defaultValues: { side: 'BUY', type: 'MARKET', quantity: '', price: currentPrice },
     mode: 'onChange',
   });
 
@@ -81,7 +82,9 @@ export function OrderForm({ presetPrice, onPresetConsumed }: OrderFormProps) {
     side === 'BUY'
       ? totalDecimal.gt(safeDecimal(availableQuote))
       : amountDecimal.gt(safeDecimal(availableBase));
-  const disabled = createOrder.isPending || amountDecimal.lte(0) || tooMuch || !ticker;
+  const limitUnsupported = type === 'LIMIT';
+  const disabled =
+    createOrder.isPending || amountDecimal.lte(0) || tooMuch || !ticker || limitUnsupported;
 
   function applyPercent(nextPercent: number) {
     setPercent(nextPercent);
@@ -114,10 +117,6 @@ export function OrderForm({ presetPrice, onPresetConsumed }: OrderFormProps) {
   }
 
   const onSubmit = handleSubmit((values) => {
-    if (values.type === 'LIMIT') {
-      toast.error('Limit orders are not implemented yet');
-      return;
-    }
     createOrder.mutate(
       { type: 'MARKET', symbol, side: values.side, quantity: values.quantity },
       {
@@ -167,7 +166,7 @@ export function OrderForm({ presetPrice, onPresetConsumed }: OrderFormProps) {
       </div>
 
       <div className="flex border-b border-border">
-        {(['LIMIT', 'MARKET'] as const).map((t) => (
+        {(['MARKET', 'LIMIT'] as const).map((t) => (
           <button
             key={t}
             onClick={() => setValue('type', t)}
@@ -185,7 +184,15 @@ export function OrderForm({ presetPrice, onPresetConsumed }: OrderFormProps) {
 
       <div className="flex items-center justify-between text-[11px]">
         <span className="text-text-2">Available</span>
-        <span className="mono text-text-1">{availableLabel}</span>
+        <button
+          type="button"
+          onClick={() => applyPercent(100)}
+          className="mono text-text-1 hover:text-text-0 hover:underline underline-offset-2 disabled:cursor-not-allowed disabled:hover:no-underline disabled:hover:text-text-1"
+          disabled={!ticker}
+          title="Use full available balance"
+        >
+          {availableLabel}
+        </button>
       </div>
 
       {type === 'LIMIT' && (
@@ -207,28 +214,27 @@ export function OrderForm({ presetPrice, onPresetConsumed }: OrderFormProps) {
         <FieldNum value={quantity} onChange={handleAmount} unit={baseAsset} placeholder="0.00" />
       </FormRow>
 
-      <div className="pct-track">
-        <div className="pct-fill" style={{ width: percent + '%' }} />
-        {stops.map((stop) => (
-          <div
-            key={stop}
-            className="pct-stop"
-            style={{ left: stop + '%' }}
-            data-tip={stop + '%'}
-            onClick={() => applyPercent(stop)}
-          />
-        ))}
-        {percent > 0 && <div className="pct-dot" style={{ left: percent + '%' }} />}
-        {stops.map((stop) => (
-          <div
-            key={stop}
-            className="pct-label"
-            style={{ left: stop + '%' }}
-            onClick={() => applyPercent(stop)}
-          >
-            {stop}%
-          </div>
-        ))}
+      <div className="px-1 pt-2 pb-1">
+        <Slider
+          value={[percent]}
+          min={0}
+          max={100}
+          step={1}
+          onValueChange={([next]) => applyPercent(next ?? 0)}
+        />
+        <div className="relative mt-3 h-3">
+          {stops.map((stop) => (
+            <button
+              key={stop}
+              type="button"
+              onClick={() => applyPercent(stop)}
+              className="mono absolute -translate-x-1/2 text-[10px] text-text-2 hover:text-text-0"
+              style={{ left: stop + '%' }}
+            >
+              {stop}%
+            </button>
+          ))}
+        </div>
       </div>
 
       <FormRow label="Total">
@@ -240,9 +246,16 @@ export function OrderForm({ presetPrice, onPresetConsumed }: OrderFormProps) {
         />
       </FormRow>
 
-      {tooMuch && (
+      {tooMuch && !limitUnsupported && (
         <div className="text-[11px] text-down">
           Insufficient {side === 'BUY' ? quoteAsset : baseAsset} balance
+        </div>
+      )}
+
+      {limitUnsupported && (
+        <div className="rounded-sm border border-dashed border-border bg-bg-2 px-2.5 py-2 text-[11px] text-text-2 text-center">
+          Limit orders are not supported yet — please use <span className="text-text-0">Market</span>
+          .
         </div>
       )}
 
