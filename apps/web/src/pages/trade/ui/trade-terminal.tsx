@@ -8,6 +8,7 @@ import { OrderBook } from '@/widgets/order-book';
 import { OrderForm } from '@/widgets/order-form';
 import { StatusFooter } from '@/widgets/status-footer';
 import { TopBar } from '@/widgets/top-bar';
+import { AllTickersStream } from '@/entities/ticker';
 import { SymbolSync, useMarketStore } from '@/entities/trading-pair';
 
 interface TradeTerminalProps {
@@ -27,6 +28,7 @@ export function TradeTerminal({ initialSymbol }: TradeTerminalProps) {
   return (
     <div className="h-full flex flex-col">
       <SymbolSync />
+      <AllTickersStream />
       <TopBar />
 
       <div className="flex-1 flex min-h-0 overflow-hidden">

@@ -1,7 +1,7 @@
 'use client';
 
 import { useBalances, calculateTotalEquityUsdt } from '@/entities/balance';
-import { useTickers, TickerSubscription, TickerStats } from '@/entities/ticker';
+import { TickerStats } from '@/entities/ticker';
 import { formatDecimal } from '@/shared/lib/format';
 import { Stat } from '@/shared/ui/stat';
 import { PairPicker } from '@/features/select-trading-pair';
@@ -9,7 +9,6 @@ import { ResetAccountButton } from '@/features/reset-account';
 import { Brand } from './brand';
 
 export function TopBar() {
-  const { data: tickers } = useTickers();
   const { data: balances } = useBalances();
   const totalEquity = calculateTotalEquityUsdt(balances);
 
@@ -34,10 +33,6 @@ export function TopBar() {
         </Stat>
         <ResetAccountButton />
       </div>
-
-      {(tickers ?? []).map((ticker) => (
-        <TickerSubscription key={ticker.symbol} symbol={ticker.symbol} />
-      ))}
     </div>
   );
 }
