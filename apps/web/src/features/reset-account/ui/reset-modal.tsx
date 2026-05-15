@@ -27,12 +27,7 @@ export function ResetModal({ onClose }: ResetModalProps) {
           cannot be undone.
         </div>
         <div className="flex justify-end gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onClose}
-            disabled={resetAccount.isPending}
-          >
+          <Button variant="outline" size="sm" onClick={onClose} disabled={resetAccount.isPending}>
             Cancel
           </Button>
           <Button

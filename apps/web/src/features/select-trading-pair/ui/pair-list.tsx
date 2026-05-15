@@ -66,9 +66,7 @@ export function PairList({ tickers, activeSymbol, onSelect }: PairListProps) {
                   <span className="font-medium">{ticker.baseAsset}</span>
                   <span className="text-text-3">/{ticker.quoteAsset}</span>
                 </span>
-                <span className="mono text-right text-text-0">
-                  {formatPrice(ticker.lastPrice)}
-                </span>
+                <span className="mono text-right text-text-0">{formatPrice(ticker.lastPrice)}</span>
                 <span
                   className={cn(
                     'mono text-right text-[11px]',
